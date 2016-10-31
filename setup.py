@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-import iso8601utils
+import jsonschemaplus
 
 here = path.abspath(path.dirname(__file__))
 
