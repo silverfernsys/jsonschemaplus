@@ -12,4 +12,4 @@ This project adheres to `Semantic Versioning <http://semver.org/>`_.
 * Initial commit
 
 
-.. _`0.1`: https://github.com/silverfernsys/jsonschemaplus
+.. _`0.0.1dev1`: https://github.com/silverfernsys/jsonschemaplus
