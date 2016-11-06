@@ -1,0 +1,75 @@
+[
+    {
+        "description": "simple number type validation",
+        "schema": {"type": "number", "minimum": 3, "maximum": 10.67},
+        "tests": [
+            {
+                "description": "an integer is valid",
+                "data": 4,
+                "valid": true
+            },
+            {
+                "description": "a float is valid",
+                "data": 7.156,
+                "valid": true
+            },
+            {
+                "description": "an string is not number",
+                "data": "4",
+                "valid": false
+            },
+            {
+                "description": "an object is not a number",
+                "data": {},
+                "valid": false
+            },
+            {
+                "description": "an array is not a number",
+                "data": [1.001, 2.01, 3.52, 4, 5.0],
+                "valid": false
+            },
+            {
+                "description": "an number less than minimum is invalid",
+                "data": -92.48,
+                "valid": false
+            },
+            {
+                "description": "a number greater than maximum is invalid",
+                "data": 10.68,
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "simple enum validation",
+        "schema": {"type": "number", "enum": [5, 21.11, 46.09, 8.12]},
+        "tests": [
+            {
+                "description": "one of the enum is valid",
+                "data": 46.09,
+                "valid": true
+            },
+            {
+                "description": "a number not in enum is invalid",
+                "data": 4.2,
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "integer multipleOf validation",
+        "schema": {"type": "number", "multipleOf": 8.09},
+        "tests": [
+            {
+                "description": "a multiple number is valid",
+                "data": 97.08,
+                "valid": true
+            },
+            {
+                "description": "a non multiple number is invalid",
+                "data": 17.99,
+                "valid": false
+            }
+        ]
+    }
+]

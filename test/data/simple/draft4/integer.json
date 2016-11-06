@@ -1,0 +1,75 @@
+[
+    {
+        "description": "simple integer type validation",
+        "schema": {"type": "integer", "minimum": 2, "maximum": 5},
+        "tests": [
+            {
+                "description": "integer is valid",
+                "data": 4,
+                "valid": true
+            },
+            {
+                "description": "a float is not an integer",
+                "data": 4.0,
+                "valid": false
+            },
+            {
+                "description": "an string is not an integer",
+                "data": "4",
+                "valid": false
+            },
+            {
+                "description": "an object is not an integer",
+                "data": {"test": 300},
+                "valid": false
+            },
+            {
+                "description": "an array is not an integer",
+                "data": [1, 2, 3, 4, 5],
+                "valid": false
+            },
+            {
+                "description": "an integer less than minimum is invalid",
+                "data": -3,
+                "valid": false
+            },
+            {
+                "description": "an integer greater than maximum is invalid",
+                "data": 10,
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "simple enum validation",
+        "schema": {"type": "integer", "enum": [5, 21, 44, 67]},
+        "tests": [
+            {
+                "description": "one of the enum is valid",
+                "data": 44,
+                "valid": true
+            },
+            {
+                "description": "an integer not in enum is invalid",
+                "data": 4,
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "integer multipleOf validation",
+        "schema": {"type": "integer", "multipleOf": 7},
+        "tests": [
+            {
+                "description": "integer not multiple of 7",
+                "data": 23,
+                "valid": false
+            },
+            {
+                "description": "integer multiple of 7",
+                "data": 56,
+                "valid": true
+            }
+        ]
+    }
+]

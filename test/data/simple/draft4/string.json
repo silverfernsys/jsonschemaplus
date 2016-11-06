@@ -1,0 +1,75 @@
+[
+    {
+        "description": "simple string type validation",
+        "schema": {"type": "string", "minLength": 2, "maxLength": 5},
+        "tests": [
+            {
+                "description": "an integer is not a string",
+                "data": 1,
+                "valid": false
+            },
+            {
+                "description": "an object is not a string",
+                "data": {"a": 1, "b": 2},
+                "valid": false
+            },
+            {
+                "description": "an array is not a string",
+                "data": ["a", "b", "c"],
+                "valid": false
+            },
+            {
+                "description": "string is valid",
+                "data": "foo",
+                "valid": true
+            },
+            {
+                "description": "string with length less than minLength is invalid",
+                "data": "f",
+                "valid": false
+            },
+            {
+                "description": "string with length greater than maxLength is invalid",
+                "data": "asdfasdf",
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "simple enum validation",
+        "schema": {"enum": [1, "233", "four", "qwerty"], "minLength": 3, "maxLength": 6},
+        "tests": [
+            {
+                "description": "one of the enum is valid",
+                "data": 1,
+                "valid": true
+            },
+            {
+                "description": "something else is invalid",
+                "data": 4,
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "all string validation keywords",
+        "schema": {"enum": [1, 4, "23", "four", "qwerty", "asdfasdf"], "minLength": 3, "maxLength": 6},
+        "tests": [
+            {
+                "description": "too short is invalid",
+                "data": "23",
+                "valid": false
+            },
+            {
+                "description": "one of the enum is valid",
+                "data": "four",
+                "valid": true
+            },
+            {
+                "description": "too long is invalid",
+                "data": "asdfasdf",
+                "valid": false
+            }
+        ]
+    }
+]

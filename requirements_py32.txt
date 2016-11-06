@@ -1,2 +1,7 @@
 coverage==3.7.1
 codecov
+requests
+rfc3986
+rfc3987
+strict-rfc3339
+validate_email

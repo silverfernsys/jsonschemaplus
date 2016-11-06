@@ -26,6 +26,6 @@ A modular implementation of `JSON Schema <http://json-schema.org>`_.
 Planned Features
 ----------------
 
-- Support for `Draft 4 <http://json-schema.org/documentation.html>`_ of the specification.
+- Implementation of the `Draft 4 <http://json-schema.org/documentation.html>`_ specification.
 - Lazy json validation.
 - Full featured error reporting.
