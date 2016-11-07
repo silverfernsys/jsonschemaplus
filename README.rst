@@ -23,9 +23,22 @@ jsonschemaplus
 
 A modular implementation of `JSON Schema <http://json-schema.org>`_.
 
+Current Features
+----------------
+- Passes a large portion of the specification.
+- Does not currently validate the following keywords
+
+	- $ref
+	- definitions
+	- dependencies
+	- oneOf
+	- not
+	- anyOf
+	- allOf
+
 Planned Features
 ----------------
 
-- Implementation of the `Draft 4 <http://json-schema.org/documentation.html>`_ specification.
+- Implementation of the entire `Draft 4 <http://json-schema.org/documentation.html>`_ specification.
 - Lazy json validation.
 - Full featured error reporting.
