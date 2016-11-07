@@ -33,8 +33,6 @@ class Draft4Validator(object):
         str: _str_keys, unicode: _str_keys, type(None): _null_keys
     }
 
-
-
     formats = {
         'date-time': rfc3339,
         'email': email,
@@ -326,13 +324,13 @@ class Draft4Validator(object):
                             yield ValidationError('Error validating "%s." Missing dependency "%s"'
                                 ' of "%s" ' % (data, dependency, key))
                 elif type(value) == dict:
-                    gen = self._properties(data, value['properties'])
+                    gen = self.flattened_errors(self._properties(data, value))
                     err = next(gen, self._flag)
                     if err != self._flag:
                         yield ValidationError('Error validating "%s." Incorrect dependencies.'
                             % data)
                         yield err
-                    yield gen
+                        yield gen
 
     def flattened_errors(self, it):
         for i in it:

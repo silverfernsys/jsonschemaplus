@@ -30,7 +30,6 @@ Current Features
 
 	- $ref
 	- definitions
-	- dependencies
 
 Planned Features
 ----------------

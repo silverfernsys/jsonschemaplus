@@ -14,8 +14,7 @@ def paths(*args):
 
 class JSONSchemaPlusTest(unittest.TestCase):
     def setUp(self):
-        self.excluded = ['ref.json', 'refRemote.json', 'definitions.json', 'dependencies.json']
-        # self.excluded.extend(['oneOf.json', 'not.json', 'anyOf.json', 'allOf.json'])
+        self.excluded = ['ref.json', 'refRemote.json', 'definitions.json']
 
     def print_details(self, is_valid, test_data, schema):
         if is_valid != test_data['valid']:
@@ -29,11 +28,11 @@ class JSONSchemaPlusTest(unittest.TestCase):
             calling_func_name = stack()[1][3]
             for test in data['tests']:
                 is_valid = validator.is_valid(test['data'])
-                self.print_details(is_valid, test, data['schema'])
-                try:
-                    self.assertEquals(is_valid, test['valid'], calling_func_name)
-                except:
-                    print("ERROR VALIDATING %s" % path)
+                # self.print_details(is_valid, test, data['schema'])
+                # try:
+                self.assertEquals(is_valid, test['valid'], calling_func_name)
+                # except:
+                #     print("ERROR VALIDATING %s" % path)
 
     def run_test(self, *components):
         if components[-1].startswith('*.'):
@@ -58,6 +57,9 @@ class TestValidatorsWithSuite(JSONSchemaPlusTest):
 
     # def test_dependencies(self):
     #     self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'dependencies.json')
+
+    # def test_definitions(self):
+    #     self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'definitions.json')
 
     # def test_not(self):
     #     self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'not.json')
