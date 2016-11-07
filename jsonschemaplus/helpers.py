@@ -1,8 +1,14 @@
 import re
+import sys
 from rfc3986 import is_valid_uri
 from rfc3987 import get_compiled_pattern
 from strict_rfc3339 import validate_rfc3339
 from validate_email import validate_email
+
+
+if sys.version_info > (3,):
+    long = int
+    unicode = str
 
 
 ipv4_regex = get_compiled_pattern('^%(IPv4address)s$')

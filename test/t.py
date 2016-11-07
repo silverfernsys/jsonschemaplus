@@ -47,11 +47,23 @@ def resolve_hyperschema():
     v = validator(hyperschema)
 
 
+class A(object):
+    pass
+
+class B(A):
+    pass
+
+class C(B):
+    pass
+
 def main():
+    c = C()
+    print(issubclass(type(c), A))
+    print(isinstance(c, A))
     # validate_ref()
-    validate_type()
-    resolve_metaschema()
-    resolve_hyperschema()
+    # validate_type()
+    # resolve_metaschema()
+    # resolve_hyperschema()
 
 
 if __name__ == '__main__':

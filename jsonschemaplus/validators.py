@@ -1,4 +1,5 @@
 import re
+import sys
 from collections import Iterable
 from copy import deepcopy
 from jsonschemaplus.helpers import (email, hostname, ipv4, ipv6, rfc3339, uri, array, boolean, integer,
@@ -9,22 +10,30 @@ from jsonschemaplus.schemas.metaschema import metaschema
 from jsonschemaplus.schemas.hyperschema import hyperschema
 
 
+if sys.version_info > (3,):
+    long = int
+    unicode = str
+
+
 # Question: can a dict or list be 'enum'ed?
 class Draft4Validator(object):
     _all_keys = ['enum', 'type', 'allOf', 'anyOf', 'not', 'oneOf']
     _array_keys = ['items', 'maxItems', 'minItems', 'uniqueItems']
     _boolean_keys = []
-    _object_keys = ['dependencies', 'maxProperties', 'minProperties',
-        'properties', 'required']
+    _object_keys = ['dependencies', 'maxProperties', 'minProperties', 
+        'properties', 'patternProperties', 'additionalProperties', 'required']
     _num_keys = ['maximum', 'minimum', 'multipleOf']
     _str_keys = ['format', 'maxLength', 'minLength', 'pattern']
     _null_keys = []
+    _properties_keys = ['properties', 'patternProperties', 'additionalProperties']
     
     _keys = {
         dict: _object_keys, list: _array_keys, bool: _boolean_keys,
         int: _num_keys, float: _num_keys, long: _num_keys,
         str: _str_keys, unicode: _str_keys, type(None): _null_keys
     }
+
+
 
     formats = {
         'date-time': rfc3339,
@@ -58,6 +67,8 @@ class Draft4Validator(object):
             'oneOf': self._one_of,
             'pattern': self._pattern,
             'properties': self._properties,
+            'patternProperties': self._properties,
+            'additionalProperties': self._properties,
             'required': self._required,
             'type': self._type,
             'uniqueItems': self._unique_items
@@ -74,20 +85,22 @@ class Draft4Validator(object):
             'valid': valid
         }
 
-    def errors(self, data, flatten=True):
-        if flatten:
-            return self.flattened_errors(self._errors(data, self._schema))
-        else:
-            return self._errors(data, self._schema)
+    def errors(self, data, flatten=True, schema=None):
+        if schema is None:
+            schema = self._schema
+        return self.flattened_errors(self._errors(data, schema))
 
     def _errors(self, data, schema):
         try:
-            for key in self._keys[type(data)]:
-                yield self._validators[key](data, schema)
-
-            for key in self._all_keys:
-                yield self._validators[key](data, schema)
-        except KeyError:
+            processed_properties = False
+            for key in self._keys[type(data)] + self._all_keys:
+                if key in schema:
+                    if key not in self._properties_keys:
+                        yield self._validators[key](data, schema)
+                    elif not processed_properties:
+                        processed_properties = True
+                        yield self._validators[key](data, schema)
+        except KeyError as e:
             yield ValidationError('Invalid data type: %s' % data.__class__.__name__)
 
     def _enum(self, data, schema):
@@ -207,17 +220,17 @@ class Draft4Validator(object):
 
     def _not(self, data, schema):
         not_schema = schema.get('not')
-        if not_schema:
-            if next(self._errors(data, not_schema), self._flag) == self._flag:
+        if not_schema is not None:
+            if next(self.flattened_errors(self._errors(data, not_schema)), self._flag) == self._flag:
                 yield ValidationError('Error validating "%s" with NOT schema "%s".'
                     % (data, not_schema))
 
     def _all_of(self, data, schema):
         all_of_schema = schema.get('allOf')
-        if all_of_schema:
+        if all_of_schema is not None:
             error_found = False
             for subschema in all_of_schema:
-                for error in self._errors(data, subschema):
+                for error in self.flattened_errors(self._errors(data, subschema)):
                     if not error_found:
                         error_found = True
                         yield ValidationError('Error validating "%s" with allOf schema "%s".'
@@ -227,10 +240,10 @@ class Draft4Validator(object):
     def _any_of(self, data, schema):
         """ Yield an error if all schemas fail. """
         any_of_schema = schema.get('anyOf')
-        if any_of_schema:
+        if any_of_schema is not None:
             error_count = 0
             for subschema in any_of_schema:
-                if next(self._errors(data, subschema), self._flag) != self._flag:
+                if next(self.flattened_errors(self._errors(data, subschema)), self._flag) != self._flag:
                     error_count += 1
             if error_count == len(any_of_schema):
                 yield ValidationError('Error validating "%s" with anyOf schema "%s".'
@@ -239,10 +252,10 @@ class Draft4Validator(object):
     def _one_of(self, data, schema):
         """ Yield an error if more than one or zero schemas validate. """
         one_of_schema = schema.get('oneOf')
-        if one_of_schema:
+        if one_of_schema is not None:
             validate_count = 0
             for subschema in one_of_schema:
-                if next(self._errors(data, subschema), self._flag) == self._flag:
+                if next(self.flattened_errors(self._errors(data, subschema)), self._flag) == self._flag:
                     validate_count += 1
             if validate_count != 1:
                 yield ValidationError('Error validating "%s" with oneOf schema "%s".'
@@ -267,19 +280,22 @@ class Draft4Validator(object):
         patterns = schema.get('patternProperties', {})
         additional = schema.get('additionalProperties', True)
         for key in data:
+            # print('key: %s' % key)
             if key in properties:
-                yield self._errors(data[key], properties[key])
+                # print('data[key]: %s, properties[key]: %s' % (data[key], properties[key]))
+                yield self.flattened_errors(self._errors(data[key], properties[key]))
             subschemas = self._regex_dict(key, patterns)
+            # print('subschemas: %s' % subschemas)
             if len(subschemas) > 0:
                 for subschema in subschemas:
-                    yield self._errors(data[key], subschema)
+                    yield self.flattened_errors(self._errors(data[key], subschema))
             elif key not in properties:
                 if type(additional) == bool:
                     if not additional:
                         yield ValidationError('Error validating "%s". Key %s not allowed.'
                             % (data, key))
                 else:
-                    yield self._errors(data[key], additional)
+                    yield self.flattened_errors(self._errors(data[key], additional))
 
     def _regex_dict(self, key, regex_dict):
         matches = []
@@ -341,20 +357,15 @@ class Draft4Validator(object):
     
     def _validate(self, data, schema):
         error = next(self.errors(data, schema), self._flag)
-        # print('error: %s, flag: %s' % (error, self._flag))
+        # print('*** error: %s' % error)
         if error != self._flag:
-            # print('ERROR DOES NOT EQUAL FLAG!')
             raise error
 
     def is_valid(self, data):
-        # print('data specific keys: %s' % self._keys[type(data)])
-        # print('general keys: %s' % self._all_keys)
-
         try:
             self.validate(data)
             return True
-        except ValidationError as e:
-            print('e: %s' % e)
+        except ValidationError:
             return False
 
     def _resolve_refs(self, schema, root, parent=None):

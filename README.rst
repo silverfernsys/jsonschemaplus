@@ -31,10 +31,6 @@ Current Features
 	- $ref
 	- definitions
 	- dependencies
-	- oneOf
-	- not
-	- anyOf
-	- allOf
 
 Planned Features
 ----------------
