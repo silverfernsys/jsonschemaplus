@@ -1,10 +1,7 @@
 import glob, json, unittest
 from inspect import stack
 from os.path import join, dirname, abspath
-# try:
 from jsonschemaplus.validators import Draft4Validator
-# except:
-    # from validators import Draft4Validator
 
 
 def path(*args):
