@@ -166,11 +166,18 @@ class Draft4Validator(object):
             for item in data:
                 yield self._type(item, item_type)
         elif type(item_type) == list:
-            if len(item_type) != len(data):
-                yield ValidationError('items.length != data.length')
+            additional_items = schema.get('additionalItems', True)
+            if len(item_type) > len(data):
+                yield ValidationError('items.length > data.length')
             else:
                 for i in range(len(item_type)):
                     yield self._type(data[i], item_type[i])
+                if len(item_type) < len(data):
+                    if additional_items == False:
+                        yield ValidationError('No additional items allowed.')
+                    elif type(additional_items) == dict:
+                        for i in range(len(item_type), len(data)):
+                            yield self._type(data[i], additional_items)
 
     def _type(self, data, schema):
         validates = False
@@ -258,23 +265,29 @@ class Draft4Validator(object):
     def _properties(self, data, schema):
         properties = schema.get('properties', {})
         patterns = schema.get('patternProperties', {})
-        additional = schema.get('additionalProperties')
+        additional = schema.get('additionalProperties', True)
         for key in data:
             if key in properties:
                 yield self._errors(data[key], properties[key])
-            else:
-                subschema = self._regex_dict(key, patterns)
-                if subschema:
+            subschemas = self._regex_dict(key, patterns)
+            if len(subschemas) > 0:
+                for subschema in subschemas:
                     yield self._errors(data[key], subschema)
-                elif additional:
+            elif key not in properties:
+                if type(additional) == bool:
+                    if not additional:
+                        yield ValidationError('Error validating "%s". Key %s not allowed.'
+                            % (data, key))
+                else:
                     yield self._errors(data[key], additional)
 
     def _regex_dict(self, key, regex_dict):
+        matches = []
         for regex in regex_dict:
             r = re.compile(regex)
             if r.search(key):
-                return regex_dict[regex]
-        return None
+                matches.append(regex_dict[regex])
+        return matches
 
     def _max_properties(self, data, schema):
         maxProperties = schema.get('maxProperties', None)

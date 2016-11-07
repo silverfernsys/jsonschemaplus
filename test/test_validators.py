@@ -13,6 +13,10 @@ def paths(*args):
 
 
 class JSONSchemaPlusTest(unittest.TestCase):
+    def setUp(self):
+        self.excluded = ['ref.json', 'refRemote.json', 'definitions.json', 'dependencies.json']
+        self.excluded.extend(['oneOf.json', 'not.json', 'anyOf.json', 'allOf.json'])
+
     def print_details(self, is_valid, test_data, schema):
         if is_valid != test_data['valid']:
             print('data: %s' % test_data['data'])
@@ -24,30 +28,45 @@ class JSONSchemaPlusTest(unittest.TestCase):
             validator = Draft4Validator(data['schema'])
             for test in data['tests']:
                 is_valid = validator.is_valid(test['data'])
-                self.print_details(is_valid, test, data['schema'])
+                # self.print_details(is_valid, test, data['schema'])
+                # try:
                 self.assertEquals(is_valid,
                     test['valid'], stack()[1][3])
+                # except:
+                #     print("ERROR VALIDATING %s" % path)
 
     def run_test(self, *components):
         if components[-1].startswith('*.'):
             for p in paths(*components):
-                self.run_test_data(p)
+                exclude = False
+                for file_name in self.excluded:
+                    if p.endswith(file_name):
+                        exclude = True
+                        break
+                if not exclude:
+                    self.run_test_data(p)
         else:
             self.run_test_data(path(*components))
     
 
 class TestValidatorsWithSuite(JSONSchemaPlusTest):
-    def test_draft4_validator(self):
-        self.assertIsNotNone(Draft4Validator({'key': 'value'}))
+    def test_optionals(self):
+        self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'optional', '*.json')
 
-    # def test_optionals(self):
-    #     self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'optional', '*.json')
+    def test_draft4(self):
+        self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', '*.json')
 
-    # def test_draft4(self):
-    #     self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', '*.json')
+    # def test_pattern_properties(self):
+    #     self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'patternProperties.json')
 
-    def test_additional_items(self):
-        self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'additionalItems.json')
+    # def test_properties(self):
+    #     self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'properties.json')
+
+    # def test_additional_properties(self):
+    #     self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'additionalProperties.json')
+
+    # def test_additional_items(self):
+    #     self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'additionalItems.json')
 
     # def test_type(self):
     #     self.run_test('data', 'JSON-Schema-Test-Suite', 'draft4', 'type.json')
@@ -90,9 +109,6 @@ class TestValidatorsWithSuite(JSONSchemaPlusTest):
 
 
 class TestValidators(JSONSchemaPlusTest):
-    def test_draft4_validator(self):
-        self.assertIsNotNone(Draft4Validator({'key': 'value'}))
-
     def test_enum(self):
         self.run_test('data', 'simple', 'draft4', 'enum.json')
 
