@@ -65,7 +65,7 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['requests', 'rfc3986', 'rfc3987',
-        'strict-rfc3339', 'validate_email'],
+        'strict-rfc3339'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,

@@ -4,4 +4,3 @@ requests
 rfc3986
 rfc3987
 strict-rfc3339
-validate_email

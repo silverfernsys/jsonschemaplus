@@ -3,14 +3,14 @@ import sys
 from rfc3986 import is_valid_uri
 from rfc3987 import get_compiled_pattern
 from strict_rfc3339 import validate_rfc3339
-from validate_email import validate_email
+# from validate_email import validate_email
 
 
 if sys.version_info > (3,):
     long = int
     unicode = str
 
-
+email_regex = re.compile(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)')
 ipv4_regex = get_compiled_pattern('^%(IPv4address)s$')
 ipv6_regex = get_compiled_pattern('^%(IPv6address)s$')
 hostname_regex = re.compile('(?!-)[A-Z\d-]{1,63}(?<!-)$', re.IGNORECASE)
@@ -19,7 +19,12 @@ hostname_regex = re.compile('(?!-)[A-Z\d-]{1,63}(?<!-)$', re.IGNORECASE)
 rfc3339 = validate_rfc3339
 
 
-email = validate_email
+# email = validate_email
+def email(value):
+	if email_regex.match(value):
+		return True
+	else:
+		return False
 
 
 def ipv4(value):
