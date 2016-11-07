@@ -1,3 +1,4 @@
+import re
 from collections import Iterable
 from copy import deepcopy
 from jsonschemaplus.helpers import (email, hostname, ipv4, ipv6, rfc3339, uri, array, boolean, integer,
@@ -8,84 +9,30 @@ from jsonschemaplus.schemas.metaschema import metaschema
 from jsonschemaplus.schemas.hyperschema import hyperschema
 
 
-formats = {
-    'date-time': rfc3339,
-    'email': email,
-    'hostname': hostname,
-    'ipv4': ipv4,
-    'ipv6': ipv6,
-    'uri': uri
-}
-
-
-# def build_validator(names):
-#     validators = [types.get(name) for name in names if types.get(name)]
-
-#     def validator(value):
-#         for v in validators:
-#             if v(value):
-#                 return True
-#         return False
-
-#     return validator
-
-
-# def get_type_validator(name):
-#     if string(name):
-#         return types.get(name)
-#     else:
-#         return build_validator(name)
-
-
-# values = {
-#     'maximum': maximum,
-#     'minimum': minimum,
-#     'maxItems': max_items,
-#     'minItems': min_items,
-#     'maxLength': max_length,
-#     'minLength': min_length,
-#     'maxProperties': max_properties,
-#     'minProperties': min_properties,
-#     'multipleOf': multiple_of,
-#     'pattern': pattern,
-#     'enum': enum,
-#     'uniqueItems': unique
-# }
-
-
-# validators = {
-#     'type': types
-# }
-
-
-# "array", "boolean", "integer", "null", "number", "object", "string"
-# keys = {
-#     'all': ['not', 'allOf', 'anyOf', 'oneOf'],
-#     'object': ['default', 'required', 'properties', 'patternProperties',
-#         'minProperties', 'maxProperties', 'additionalProperties',
-#         'dependencies'],
-#     'array': ['additionalItems', 'items', 'maxItems',
-#         'minItems', 'uniqueItems'],
-#     'integer': ['maximum', 'minimum', 'multipleOf', 'enum'],
-#     'number': ['maximum', 'minimum', 'multipleOf', 'enum'],
-#     'string': ['maxLength', 'minLength', 'enum']
-# }
-
-
-# Questions: can a dict or list be 'enum'ed?
+# Question: can a dict or list be 'enum'ed?
 class Draft4Validator(object):
     _all_keys = ['enum', 'type', 'allOf', 'anyOf', 'not', 'oneOf']
     _array_keys = ['items', 'maxItems', 'minItems', 'uniqueItems']
+    _boolean_keys = []
     _object_keys = ['dependencies', 'maxProperties', 'minProperties',
         'properties', 'required']
     _num_keys = ['maximum', 'minimum', 'multipleOf']
-    _str_keys = ['maxLength', 'minLength']
+    _str_keys = ['format', 'maxLength', 'minLength', 'pattern']
     _null_keys = []
     
     _keys = {
-        dict: _object_keys, list: _array_keys,
+        dict: _object_keys, list: _array_keys, bool: _boolean_keys,
         int: _num_keys, float: _num_keys, long: _num_keys,
         str: _str_keys, unicode: _str_keys, type(None): _null_keys
+    }
+
+    formats = {
+        'date-time': rfc3339,
+        'email': email,
+        'hostname': hostname,
+        'ipv4': ipv4,
+        'ipv6': ipv6,
+        'uri': uri
     }
 
     def __init__(self, schema):
@@ -96,6 +43,7 @@ class Draft4Validator(object):
             'anyOf': self._any_of,
             'dependencies': self._dependencies,
             'enum': self._enum,
+            'format': self._format,
             'items': self._items,
             'maximum': self._maximum,
             'maxItems': self._max_items,
@@ -108,6 +56,7 @@ class Draft4Validator(object):
             'multipleOf': self._multiple_of,
             'not': self._not,
             'oneOf': self._one_of,
+            'pattern': self._pattern,
             'properties': self._properties,
             'required': self._required,
             'type': self._type,
@@ -133,8 +82,6 @@ class Draft4Validator(object):
 
     def _errors(self, data, schema):
         try:
-            # yield self._validators['enum'](data, schema)
-
             for key in self._keys[type(data)]:
                 yield self._validators[key](data, schema)
 
@@ -143,65 +90,23 @@ class Draft4Validator(object):
         except KeyError:
             yield ValidationError('Invalid data type: %s' % data.__class__.__name__)
 
-    # def _errors(self, data, schema):
-    #     valid_props = self.keys.get(type(data))
-    #     if valid_props:
-    #         for prop in valid_props:
-    #             validator = values.get(prop)
-    #             value = schema.get(prop)
-    #             if validator and value:
-    #                 if not validator(data, value):
-    #                     yield ValidationError('Error validating "%s". Expected "%s", got "%s".' % 
-    #                         (prop, value, data))
-    #             elif value and prop == 'items':
-    #                 if type(value) == list:
-    #                     if len(value) != len(data):
-    #                         yield ValidationError('Error validating "%s". Length of "data" and ' 
-    #                             '"items" do not match.' % prop)
-    #                     else:
-    #                         for i in range(len(value)):
-    #                             possible_error = self._errors(data[i], value[i])
-    #                             if possible_error:
-    #                                 yield possible_error
-    #                 elif type(value) == dict:
-    #                     for i in range(len(data)):
-    #                         possible_error = self._errors(data[i], value)
-    #                         if possible_error:
-    #                             yield possible_error
-
-    #         # not
-    #         not_schema = schema.get('not')
-    #         if not_schema:
-    #             yield self._not(data, not_schema)
-
-    #         # allOf
-    #         all_of_schema = schema.get('allOf')
-    #         if all_of_schema:
-    #             yield self._all_of(data, all_of_schema)
-
-    #         # anyOf
-    #         any_of_schema = schema.get('anyOf')
-    #         if any_of_schema:
-    #             yield self._any_of(data, any_of_schema)
-
-    #         # oneOf
-    #         one_of_schema = schema.get('oneOf')
-    #         if one_of_schema:
-    #             yield self._one_of(data, one_of_schema)
-    #     else:
-    #         yield ValidationError('Invalid data type: %s' % data.__class__.__name__)
-
-    # def _enumz(self, data, schema):
-    #     enums = schema.get('enum')
-    #     if enums and not enum(data, enums):
-    #         return ValidationError('%s is not in enum list %s'
-    #             % (data, enums))
-
     def _enum(self, data, schema):
         enums = schema.get('enum')
         if enums and not enum(data, enums):
             yield ValidationError('%s is not in enum list %s'
                 % (data, enums))
+
+    def _format(self, data, schema):
+        format_ = schema.get('format')
+        if format_:
+            validator = self.formats.get(format_)
+            if validator:
+                if not validator(data):
+                    yield ValidationError('"%s" is not of format "%s".'
+                        % (data, format_))
+            else:
+                yield ValidationError('Unrecognized format "%s".'
+                    % (format_))
 
     def _maximum(self, data, schema):
         max_value = schema.get('maximum')
@@ -211,7 +116,7 @@ class Draft4Validator(object):
                 % (data, max_value))
 
     def _max_items(self, data, schema):
-        num_items = schema.get('minItems')
+        num_items = schema.get('maxItems')
         if num_items and not max_items(data, num_items):
             yield ValidationError('%s contains more than a maximum of %s items.'
                 % (data, num_items))
@@ -249,10 +154,10 @@ class Draft4Validator(object):
 
     def _unique_items(self, data, schema):
         if schema.get('uniqueItems', False):
-            for i in range(len(array) - 1):
-                for j in range(i + 1, len(array)):
-                    if (array[i] == array[j] and
-                        type(array[i]) == type(array[j])):
+            for i in range(len(data) - 1):
+                for j in range(i + 1, len(data)):
+                    if (data[i] == data[j] and
+                        type(data[i]) == type(data[j])):
                             yield ValidationError('Items are not unique.')
 
     def _items(self, data, schema):
@@ -292,20 +197,6 @@ class Draft4Validator(object):
                 yield ValidationError('Unknown type %s' % type_name)
         else:
             yield ValidationError('Unknown type: %s' % type_name)
-
-    # def _object_type(self, data):
-    #     if type(data) == dict:
-    #         return 'object'
-    #     elif type(data) == list:
-    #         return 'array'
-    #     elif (type(data) == int or type(data) == long):
-    #         return 'integer'
-    #     elif (type(data) == float):
-    #         return 'float'
-    #     elif type(data) == None:
-    #         return 'null'
-    #     elif type(data) == str or type(data) == unicode:
-    #         return 'string'
 
     def _not(self, data, schema):
         not_schema = schema.get('not')
@@ -355,6 +246,14 @@ class Draft4Validator(object):
             if key not in data:
                 yield ValidationError('Error validating "%s." Required property "%s" missing.'
                     % (data, key))
+
+    def _pattern(self, data, schema):
+        regex = schema.get('pattern')
+        if regex:
+            r = re.compile(regex)
+            if not r.search(data):
+                yield ValidationError('Error validating "%s." Does not match pattern "%s".'
+                    % (data, regex))
 
     def _properties(self, data, schema):
         properties = schema.get('properties', {})
