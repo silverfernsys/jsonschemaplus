@@ -1,5 +1,5 @@
 import re
-import requests
+# import requests
 import sys
 from collections import Iterable
 from copy import deepcopy
@@ -11,6 +11,7 @@ from jsonschemaplus.errors import ValidationError, SchemaError
 from jsonschemaplus.schemas.metaschema import metaschema
 from jsonschemaplus.schemas.hyperschema import hyperschema
 from jsonschemaplus.parsers import url
+from jsonschemaplus.requests import get
 
 
 if sys.version_info > (3,):
@@ -407,7 +408,8 @@ class Draft4Validator(object):
                     else:
                         try:
                             (url_, path) = url(value)
-                            data = self._resolve(requests.get(url_).json())
+                            data = self._resolve(get(url_))
+                            # data = self._resolve(requests.get(url_).json())
                             schema.update(self._path(data, path))
                         except Exception as e:
                             raise SchemaError('Error resolving schema with $ref: %s' % value)
@@ -422,7 +424,8 @@ class Draft4Validator(object):
                 elif value.find('.json') != -1:
                     schema.pop(ref)
                     (url_, path) = url(id_acc + value)
-                    data = self._resolve(requests.get(url_).json())
+                    data = self._resolve(get(url_))
+                    # data = self._resolve(requests.get(url_).json())
                     schema.update(self._path(data, path))
                     self._resolve_refs(schema, root, id_acc)
                 else:

@@ -253,7 +253,7 @@ class TestValidatorsWithSuite(JSONSchemaPlusTest):
 
     @mock.patch('requests.get')
     def test_draft4(self, mock_get):
-        mock_get.side_effect = lambda url: MockRequestResult(url)
+        mock_get.side_effect = lambda url: MockRequestResult(url).json()
         self.run_test(self.paths)
 
 
