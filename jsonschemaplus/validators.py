@@ -1,5 +1,4 @@
 import re
-# import requests
 import sys
 from collections import Iterable
 from copy import deepcopy
@@ -409,7 +408,6 @@ class Draft4Validator(object):
                         try:
                             (url_, path) = url(value)
                             data = self._resolve(get(url_))
-                            # data = self._resolve(requests.get(url_).json())
                             schema.update(self._path(data, path))
                         except Exception as e:
                             raise SchemaError('Error resolving schema with $ref: %s' % value)
@@ -425,7 +423,6 @@ class Draft4Validator(object):
                     schema.pop(ref)
                     (url_, path) = url(id_acc + value)
                     data = self._resolve(get(url_))
-                    # data = self._resolve(requests.get(url_).json())
                     schema.update(self._path(data, path))
                     self._resolve_refs(schema, root, id_acc)
                 else:
