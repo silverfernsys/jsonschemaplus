@@ -46,6 +46,7 @@ class JSONSchemaPlusTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.paths = paths(('data', 'JSON-Schema-Test-Suite', 'draft4', '*.json'))
+        print('self.data: %s' % len(self.paths))
 
     # def print_details(self, is_valid, test_data, schema):
     #     if is_valid != test_data['valid']:

@@ -78,5 +78,6 @@ setup(
 
     extras_require={
         'test': test_extras,
+        'docs': ['mkdocs']
     },
 )
