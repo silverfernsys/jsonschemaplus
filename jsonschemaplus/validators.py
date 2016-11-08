@@ -398,39 +398,38 @@ class Draft4Validator(object):
                         id_acc += value
                         if not uri(id_acc):
                             raise SchemaError('Error resolving schema with id: %s' % value)
-            for key, value in schema.items():
-                if key == ref and string(value):
-                    if uri(value):
-                        schema.pop(key)
-                        if value == 'http://json-schema.org/draft-04/schema#':
-                            schema.update(deepcopy(metaschema))
-                        else:
-                            try:
-                                (url_, path) = url(value)
-                                data = self._resolve(requests.get(url_).json())
-                                schema.update(self._path(data, path))
-                            except Exception as e:
-                                raise SchemaError('Error resolving schema with $ref: %s' % value)
-                        self._resolve_refs(schema, root, id_acc)
-                    elif value[0] == '#':
-                        schema.pop(key)
-                        subschema = self._path(root, value)
-                        if object_(subschema) and ref in subschema and string(subschema[ref]):
-                            self._resolve_refs(subschema, root, id_acc)
-                            subschema = self._path(root, value)
-                        schema.update(subschema)
-                    elif value.find('.json') != -1:
-                        schema.pop(key)
-                        (url_, path) = url(id_acc + value)
-                        data = self._resolve(requests.get(url_).json())
-                        schema.update(self._path(data, path))
-                        self._resolve_refs(schema, root, id_acc)
+            value = schema.get(ref)
+            if value and string(value):
+                if uri(value):
+                    schema.pop(ref)
+                    if value == 'http://json-schema.org/draft-04/schema#':
+                        schema.update(deepcopy(metaschema))
                     else:
-                        self._resolve_refs(value, root, id_acc)
-                elif value == root:
-                    return
+                        try:
+                            (url_, path) = url(value)
+                            data = self._resolve(requests.get(url_).json())
+                            schema.update(self._path(data, path))
+                        except Exception as e:
+                            raise SchemaError('Error resolving schema with $ref: %s' % value)
+                    self._resolve_refs(schema, root, id_acc)
+                elif value[0] == '#':
+                    schema.pop(ref)
+                    subschema = self._path(root, value)
+                    if object_(subschema) and ref in subschema and string(subschema[ref]):
+                        self._resolve_refs(subschema, root, id_acc)
+                        subschema = self._path(root, value)
+                    schema.update(subschema)
+                elif value.find('.json') != -1:
+                    schema.pop(ref)
+                    (url_, path) = url(id_acc + value)
+                    data = self._resolve(requests.get(url_).json())
+                    schema.update(self._path(data, path))
+                    self._resolve_refs(schema, root, id_acc)
                 else:
                     self._resolve_refs(value, root, id_acc)
+            for k, v in schema.items():
+                if k != ref and k != id_ and v != root:
+                    self._resolve_refs(v, root, id_acc)
         elif array(schema):
             for item in schema:
                 if item != root:
