@@ -251,7 +251,7 @@ class TestValidatorsWithSuite(JSONSchemaPlusTest):
     def test_optionals(self):
         self.run_test(('data', 'JSON-Schema-Test-Suite', 'draft4', 'optional', '*.json'))
 
-    @mock.patch('requests.get')
+    @mock.patch('jsonschemaplus.requests.get')
     def test_draft4(self, mock_get):
         mock_get.side_effect = lambda url: MockRequestResult(url).json()
         self.run_test(self.paths)
