@@ -1,13 +1,16 @@
 import re
+import requests
 import sys
 from collections import Iterable
 from copy import deepcopy
+from inspect import stack
 from jsonschemaplus.helpers import (email, hostname, ipv4, ipv6, rfc3339, uri, array, boolean, integer,
     null, number, object_, string, valid, maximum, minimum, max_items, min_items,
     max_length, min_length, max_properties, min_properties, multiple_of, enum, unique)
-from jsonschemaplus.errors import ValidationError
+from jsonschemaplus.errors import ValidationError, SchemaError
 from jsonschemaplus.schemas.metaschema import metaschema
 from jsonschemaplus.schemas.hyperschema import hyperschema
+from jsonschemaplus.parsers import url
 
 
 if sys.version_info > (3,):
@@ -17,6 +20,7 @@ if sys.version_info > (3,):
 
 # Question: can a dict or list be 'enum'ed?
 class Draft4Validator(object):
+    _substitutions = {'%25': '%', '~1': '/', '~0': '~'}
     _all_keys = ['enum', 'type', 'allOf', 'anyOf', 'not', 'oneOf']
     _array_keys = ['items', 'maxItems', 'minItems', 'uniqueItems']
     _boolean_keys = []
@@ -48,6 +52,7 @@ class Draft4Validator(object):
         self._validators = {
             'allOf': self._all_of,
             'anyOf': self._any_of,
+            # 'definitions': self._definitions,
             'dependencies': self._dependencies,
             'enum': self._enum,
             'format': self._format,
@@ -89,6 +94,8 @@ class Draft4Validator(object):
         return self.flattened_errors(self._errors(data, schema))
 
     def _errors(self, data, schema):
+        # import pdb
+        # pdb.set_trace()
         try:
             processed_properties = False
             for key in self._keys[type(data)] + self._all_keys:
@@ -119,47 +126,50 @@ class Draft4Validator(object):
                 yield ValidationError('Unrecognized format "%s".'
                     % (format_))
 
+    def _definitions(self, data, schema):
+        def_schema = schema.get('definitions')
+
     def _maximum(self, data, schema):
         max_value = schema.get('maximum')
         exclusive = schema.get('exclusiveMaximum', False)
-        if max_value and not maximum(data, max_value, exclusive):
+        if max_value is not None and not maximum(data, max_value, exclusive):
             yield ValidationError('%s is greater than maximum of %s'
                 % (data, max_value))
 
     def _max_items(self, data, schema):
         num_items = schema.get('maxItems')
-        if num_items and not max_items(data, num_items):
+        if num_items is not None and not max_items(data, num_items):
             yield ValidationError('%s contains more than a maximum of %s items.'
                 % (data, num_items))
 
     def _max_length(self, data, schema):
         length = schema.get('maxLength')
-        if length and not max_length(data, length):
+        if length is not None and not max_length(data, length):
             yield ValidationError('%s length not under maximum length of %s'
                 % (data, length))
 
     def _minimum(self, data, schema):
         min_value = schema.get('minimum')
         exclusive = schema.get('exclusiveMinimum', False)
-        if min_value and not minimum(data, min_value, exclusive):
+        if min_value is not None and not minimum(data, min_value, exclusive):
             yield ValidationError('%s not at least minimum of %s'
                 % (data, min_value))
 
     def _min_items(self, data, schema):
         num_items = schema.get('minItems')
-        if num_items and not min_items(data, num_items):
+        if num_items is not None and not min_items(data, num_items):
             yield ValidationError('%s does not contain a minimum of %s items.'
                 % (data, num_items))
 
     def _min_length(self, data, schema):
         length = schema.get('minLength')
-        if length and not min_length(data, length):
+        if length is not None and not min_length(data, length):
             yield ValidationError('%s length not at least minimum length of %s'
                 % (data, length))
 
     def _multiple_of(self, data, schema):
         multiple = schema.get('multipleOf')
-        if multiple and not multiple_of(data, multiple):
+        if multiple is not None and not multiple_of(data, multiple):
             yield ValidationError('%s not multiple of %s.'
                 % (data, multiple))
 
@@ -175,7 +185,7 @@ class Draft4Validator(object):
         item_type = schema.get('items')
         if type(item_type) == dict:
             for item in data:
-                yield self._type(item, item_type)
+                yield self.flattened_errors(self._errors(item, item_type))
         elif type(item_type) == list:
             additional_items = schema.get('additionalItems', True)
             if len(item_type) > len(data):
@@ -278,12 +288,9 @@ class Draft4Validator(object):
         patterns = schema.get('patternProperties', {})
         additional = schema.get('additionalProperties', True)
         for key in data:
-            # print('key: %s' % key)
             if key in properties:
-                # print('data[key]: %s, properties[key]: %s' % (data[key], properties[key]))
                 yield self.flattened_errors(self._errors(data[key], properties[key]))
             subschemas = self._regex_dict(key, patterns)
-            # print('subschemas: %s' % subschemas)
             if len(subschemas) > 0:
                 for subschema in subschemas:
                     yield self.flattened_errors(self._errors(data[key], subschema))
@@ -355,7 +362,6 @@ class Draft4Validator(object):
     
     def _validate(self, data, schema):
         error = next(self.errors(data, schema), self._flag)
-        # print('*** error: %s' % error)
         if error != self._flag:
             raise error
 
@@ -366,7 +372,7 @@ class Draft4Validator(object):
         except ValidationError:
             return False
 
-    def _resolve_refs(self, schema, root, parent=None):
+    def _resolve_refs(self, schema, root, id_acc=None):
         """Resolve schema references and modify supplied
         schema as a side effect.
         If function parses value that equals schema's root,
@@ -374,32 +380,61 @@ class Draft4Validator(object):
         already been resolved.
         :param schema: The schema to resolve.
         :param root: The root of the schema.
-        :param parent: The current schema's parent.
         :side effect: Modifies schema.
         :return: None
         :TODO: resolve all http ref values
         """
         ref = '$ref'
+        id_ = 'id'
         if object_(schema):
+            value = schema.get(id_)
+            if value and string(value):
+                if uri(value):
+                    id_acc = value
+                else:
+                    if id_acc is None:
+                        raise SchemaError('Error resolving schema with id: %s' % value)
+                    else:
+                        id_acc += value
+                        if not uri(id_acc):
+                            raise SchemaError('Error resolving schema with id: %s' % value)
             for key, value in schema.items():
-                if key == ref:
-                    if value == 'http://json-schema.org/draft-04/schema#':
+                if key == ref and string(value):
+                    if uri(value):
                         schema.pop(key)
-                        schema.update(metaschema)
+                        if value == 'http://json-schema.org/draft-04/schema#':
+                            schema.update(deepcopy(metaschema))
+                        else:
+                            try:
+                                (url_, path) = url(value)
+                                data = self._resolve(requests.get(url_).json())
+                                schema.update(self._path(data, path))
+                            except Exception as e:
+                                raise SchemaError('Error resolving schema with $ref: %s' % value)
+                        self._resolve_refs(schema, root, id_acc)
                     elif value[0] == '#':
                         schema.pop(key)
                         subschema = self._path(root, value)
+                        if object_(subschema) and ref in subschema and string(subschema[ref]):
+                            self._resolve_refs(subschema, root, id_acc)
+                            subschema = self._path(root, value)
                         schema.update(subschema)
+                    elif value.find('.json') != -1:
+                        schema.pop(key)
+                        (url_, path) = url(id_acc + value)
+                        data = self._resolve(requests.get(url_).json())
+                        schema.update(self._path(data, path))
+                        self._resolve_refs(schema, root, id_acc)
                     else:
-                        self._resolve_refs(value, root, schema)
+                        self._resolve_refs(value, root, id_acc)
                 elif value == root:
                     return
                 else:
-                    self._resolve_refs(value, root, schema)
+                    self._resolve_refs(value, root, id_acc)
         elif array(schema):
             for item in schema:
                 if item != root:
-                    self._resolve_refs(item, root, schema)
+                    self._resolve_refs(item, root, id_acc)
 
     def _resolve(self, schema):
         """Resolve schema references.
@@ -411,8 +446,20 @@ class Draft4Validator(object):
         return schema_copy
 
     def _path(self, schema, path):
-        path = path[1:].split('/')[1:]
+        components = path[1:].split('/')[1:]
         subschema = schema
-        for p in path:
-            subschema = subschema.get(p)
+        for c in components:
+            for k, v in self._substitutions.items():
+                if k in c:
+                    c = c.replace(k, v)
+            if type(subschema) == list:
+                try:
+                    index = int(c)
+                    subschema = subschema[index]
+                except:
+                    raise ValueError('Invalid path %s' % path)
+            elif type(subschema) == dict:
+                subschema = subschema.get(c)
+            else:
+                raise ValueError('Invalid path %s' % path)
         return subschema

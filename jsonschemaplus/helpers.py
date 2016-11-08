@@ -19,7 +19,6 @@ hostname_regex = re.compile('(?!-)[A-Z\d-]{1,63}(?<!-)$', re.IGNORECASE)
 rfc3339 = validate_rfc3339
 
 
-# email = validate_email
 def email(value):
 	if email_regex.match(value):
 		return True
