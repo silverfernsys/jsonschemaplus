@@ -3,6 +3,7 @@ from setuptools import setup, find_packages
 # To use a consistent encoding
 from codecs import open
 from os import path
+from sys import version_info
 
 import jsonschemaplus
 
@@ -71,7 +72,12 @@ setup(
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
+    if version_info > (3,):
+        test_extras = ['coverage', 'codecov', 'pytest']
+    else:
+        test_extras = ['coverage', 'codecov', 'mock', 'pytest']
+
     extras_require={
-        'test': ['coverage', 'codecov', 'pytest'],
+        'test': test_extras,
     },
 )
