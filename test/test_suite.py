@@ -17,7 +17,6 @@ class TestValidatorsWithSuite(JSONSchemaPlusTest):
     def test_optionals(self):
         self.run_test((root, 'data', 'JSON-Schema-Test-Suite', 'draft4', 'optional', '*.json'))
 
-    # @mock.patch('jsonschemaplus.requests.get')
     @mock.patch('jsonschemaplus.resolver.get')
     def test_draft4(self, mock_get):
         m = MockRequestResponse((root, 'data', 'JSON-Schema-Test-Suite',

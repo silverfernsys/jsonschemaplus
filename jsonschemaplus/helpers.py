@@ -20,10 +20,7 @@ rfc3339 = validate_rfc3339
 
 
 def email(value):
-	if email_regex.match(value):
-		return True
-	else:
-		return False
+	return email_regex.match(value) != None
 
 
 def ipv4(value):
