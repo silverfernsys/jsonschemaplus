@@ -7,9 +7,13 @@ import unittest
 
 try:
     from urllib2 import URLError
-    import mock
 except:
     from urllib.error import URLError
+
+
+try:
+    import mock
+except:
     from unittest import mock
 
 
