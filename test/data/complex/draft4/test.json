@@ -1,0 +1,74 @@
+[
+    {
+        "title": "schema with key that do not match with arrays are ignored",
+        "schema": {
+            "title": "Test Schema",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "a": {
+                        "enum": ["a", "b", "c", 1]
+                    },
+                    "b": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
+                    },
+                    "c": {
+                        "minLength": 3
+                    }
+                },
+                "required": ["b", "c"]
+            },
+            "minimum": 1,
+            "maximum": 4,
+            "maxLength": 3,
+            "maxItems": 2
+        },
+        "tests": [
+            {
+                "description": "valid data",
+                "data": [
+                    {
+                        "a": "b",
+                        "b": 3,
+                        "c": "asdf"
+                    },
+                    {
+                        "a": 1,
+                        "b": 0,
+                        "c": "qwerzxv"
+                    }
+                ],
+                "valid": true
+            },
+            {
+                "description": "invalid data",
+                "data": [
+                    {
+                        "a": 2,
+                        "b": 1.0,
+                        "c": "a"
+                    }
+                ],
+                "valid": false
+            },
+            {
+                "description": "invalid data",
+                "data": [
+                    {
+                        "a": "zzz",
+                        "b": -10
+                    },
+                    {
+                        "a": "40",
+                        "b": "2",
+                        "c": 3
+                    }
+                ],
+                "valid": false
+            }
+        ]
+    }
+]

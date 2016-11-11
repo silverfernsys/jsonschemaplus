@@ -1,0 +1,46 @@
+[
+    {
+        "description": "additionalItems as schema",
+        "schema": {
+            "title": "Supervisor Command",
+            "type": "object",
+            "properties": {
+                "cmd": {
+                    "type": "string",
+                    "enum": ["start", "stop", "restart", "sub", "unsub"] 
+                },
+                "id": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "process": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            },
+            "required": ["cmd", "id", "process"]
+        },
+        "tests": [
+            {
+                "description": "valid command",
+                "data": { "cmd": "restart", "id": 30, "process": "process_0" },
+                "valid": true
+            },
+            {
+                "description": "negative id",
+                "data": { "cmd": "asdfasdfasdf", "id": -30, "process": "process_0" },
+                "valid": false
+            },
+            {
+                "description": "string id and integer process",
+                "data": { "cmd": "wwtdd", "id": "asdf", "process": 100 },
+                "valid": false
+            },
+            {
+                "description": "string id and integer process",
+                "data": { "cmd": "sub", "id": 10 },
+                "valid": false
+            }
+        ]
+    }
+]

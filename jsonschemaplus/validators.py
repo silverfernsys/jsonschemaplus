@@ -7,10 +7,10 @@ from jsonschemaplus.helpers import (email, hostname, ipv4, ipv6, rfc3339, uri, a
     null, number, object_, string, valid, maximum, minimum, max_items, min_items,
     max_length, min_length, max_properties, min_properties, multiple_of, enum, unique)
 from jsonschemaplus.errors import ValidationError, SchemaError
-from jsonschemaplus.schemas.metaschema import metaschema
-from jsonschemaplus.schemas.hyperschema import hyperschema
+from jsonschemaplus.schemas import metaschema, hyperschema
 from jsonschemaplus.parsers import url
 from jsonschemaplus.requests import get
+from jsonschemaplus.resolver import resolve
 
 
 if sys.version_info > (3,):
@@ -18,7 +18,6 @@ if sys.version_info > (3,):
     unicode = str
 
 
-# Question: can a dict or list be 'enum'ed?
 class Draft4Validator(object):
     _substitutions = {'%25': '%', '~1': '/', '~0': '~'}
     _all_keys = ['enum', 'type', 'allOf', 'anyOf', 'not', 'oneOf']
@@ -47,12 +46,11 @@ class Draft4Validator(object):
     }
 
     def __init__(self, schema):
-        self._schema = self._resolve(schema)
+        self._schema = resolve(schema)
         self._flag = object()
         self._validators = {
             'allOf': self._all_of,
             'anyOf': self._any_of,
-            # 'definitions': self._definitions,
             'dependencies': self._dependencies,
             'enum': self._enum,
             'format': self._format,
@@ -94,8 +92,6 @@ class Draft4Validator(object):
         return self.flattened_errors(self._errors(data, schema))
 
     def _errors(self, data, schema):
-        # import pdb
-        # pdb.set_trace()
         try:
             processed_properties = False
             for key in self._keys[type(data)] + self._all_keys:
@@ -372,93 +368,5 @@ class Draft4Validator(object):
         except ValidationError:
             return False
 
-    def _resolve_refs(self, schema, root, id_acc=None):
-        """Resolve schema references and modify supplied
-        schema as a side effect.
-        If function parses value that equals schema's root,
-        _resolve_refs early exits because references have
-        already been resolved.
-        :param schema: The schema to resolve.
-        :param root: The root of the schema.
-        :side effect: Modifies schema.
-        :return: None
-        :TODO: resolve all http ref values
-        """
-        ref = '$ref'
-        id_ = 'id'
-        if object_(schema):
-            value = schema.get(id_)
-            if value and string(value):
-                if uri(value):
-                    id_acc = value
-                else:
-                    if id_acc is None:
-                        raise SchemaError('Error resolving schema with id: %s' % value)
-                    else:
-                        id_acc += value
-                        if not uri(id_acc):
-                            raise SchemaError('Error resolving schema with id: %s' % value)
-            value = schema.get(ref)
-            if value and string(value):
-                if uri(value):
-                    schema.pop(ref)
-                    if value == 'http://json-schema.org/draft-04/schema#':
-                        schema.update(deepcopy(metaschema))
-                    else:
-                        try:
-                            (url_, path) = url(value)
-                            data = self._resolve(get(url_))
-                            schema.update(self._path(data, path))
-                        except Exception as e:
-                            raise SchemaError('Error resolving schema with $ref: %s' % value)
-                    self._resolve_refs(schema, root, id_acc)
-                elif value[0] == '#':
-                    schema.pop(ref)
-                    subschema = self._path(root, value)
-                    if object_(subschema) and ref in subschema and string(subschema[ref]):
-                        self._resolve_refs(subschema, root, id_acc)
-                        subschema = self._path(root, value)
-                    schema.update(subschema)
-                elif value.find('.json') != -1:
-                    schema.pop(ref)
-                    (url_, path) = url(id_acc + value)
-                    data = self._resolve(get(url_))
-                    schema.update(self._path(data, path))
-                    self._resolve_refs(schema, root, id_acc)
-                else:
-                    self._resolve_refs(value, root, id_acc)
-            for k, v in schema.items():
-                if k != ref and k != id_ and v != root:
-                    self._resolve_refs(v, root, id_acc)
-        elif array(schema):
-            for item in schema:
-                if item != root:
-                    self._resolve_refs(item, root, id_acc)
-
-    def _resolve(self, schema):
-        """Resolve schema references.
-        :param schema: The schema to resolve.
-        :return: The resolved schema.
-        """
-        schema_copy = deepcopy(schema)
-        self._resolve_refs(schema_copy, schema_copy)
-        return schema_copy
-
-    def _path(self, schema, path):
-        components = path[1:].split('/')[1:]
-        subschema = schema
-        for c in components:
-            for k, v in self._substitutions.items():
-                if k in c:
-                    c = c.replace(k, v)
-            if type(subschema) == list:
-                try:
-                    index = int(c)
-                    subschema = subschema[index]
-                except:
-                    raise ValueError('Invalid path %s' % path)
-            elif type(subschema) == dict:
-                subschema = subschema.get(c)
-            else:
-                raise ValueError('Invalid path %s' % path)
-        return subschema
+    # def is_schema_valid(self):
+    #     try:

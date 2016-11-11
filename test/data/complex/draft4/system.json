@@ -1,0 +1,107 @@
+[
+    {
+        "description": "test hypothetical system stats api endpoint schema",
+        "schema": {
+            "title": "Supervisor System Stats",
+            "type": "object",
+            "properties": {
+                "system": {
+                    "type": "object",
+                    "properties": {
+                        "dist_name": {
+                            "description": "Operating System Distribution Name",
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "dist_version": {
+                            "description": "Operating System Version Number",
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "hostname": {
+                            "description": "System Hostname",
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "processor": {
+                            "description": "Processor Type",
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "num_cores": {
+                            "description": "Processor Cores",
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "memory": {
+                            "description": "System Memory",
+                            "type": "integer",
+                            "minimum": 0
+                        }
+                    },
+                    "required": ["dist_name", "dist_version", "hostname",
+                        "num_cores", "memory", "processor"]
+                }
+            },
+            "required": ["system"]
+        },
+        "tests": [
+            {
+                "description": "valid data",
+                "data" : { 
+                    "system": {
+                        "dist_name": "Ubuntu_update",
+                        "dist_version": "15.04_update",
+                        "hostname": "agent_1_update",
+                        "num_cores": 7,
+                        "memory": 9999999,
+                        "processor": "x86_64_update"
+                    }
+                },
+                "valid": true
+            },
+            {
+                "description": "invalid data",
+                "data": { 
+                    "system": {
+                        "dist_name": "Ubuntu_update",
+                        "dist_version": "15.04_update",
+                        "hostname": "agent_1_update",
+                        "num_cores": 0,
+                        "memory": -1000,
+                        "processor": "x86_64_update"
+                    }
+                },
+                "valid": false
+            },
+            {
+                "description": "invalid data",
+                "data": { 
+                    "system": {
+                        "dist_name": 100,
+                        "dist_version": "15.04_update",
+                        "hostname": "agent_1_update",
+                        "num_cores": 12,
+                        "memory": 2000001,
+                        "processor": "x86_64_update"
+                    }
+                },
+                "valid": false
+            },
+            {
+                "description": "invalid data",
+                "data": { 
+                    "system": {
+                        "dist_name": "Ubuntu_update",
+                        "dist_version": "15.04_update",
+                        "hostname": "agent_1_update",
+                        "num_cores": 8,
+                        "memory": 1000,
+                        "processor": 87
+                    }
+                },
+                "valid": false
+            }
+        ]
+    }
+]

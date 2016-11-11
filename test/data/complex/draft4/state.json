@@ -1,0 +1,151 @@
+[
+    {
+        "description": "hypothetical app state api endpoint validator",
+        "schema":
+        {
+            "title": "application state",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "state": {
+                        "type": "object",
+                        "properties":{
+                            "group": {
+                                "description": "Application Group",
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "name": {
+                                "description": "Application Name",
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "statename": {
+                                "description": "Application State Name",
+                                "type": "string",
+                                "enum": ["STOPPED", "STARTING", "RUNNING",
+                                    "BACKOFF", "STOPPING", "EXITED", "FATAL", "UNKNOWN"]
+                            },
+                            "pid": {
+                                "description": "Application Process Id",
+                                "type": ["integer", "null"],
+                                "minimum": 0
+                            },
+                            "start": {
+                                "description": "Application Start Time",
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "state": {
+                                "description": "Application State Number",
+                                "type": "integer",
+                                "enum": [0, 10, 20, 30, 40, 100, 200, 1000]
+                            }
+                        },
+                        "required": ["group", "name", "statename", "pid", "start", "state"]
+                    }
+                },
+                "required": ["state"]  
+            }
+        },
+        "tests": [
+            {
+                "description": "valid data",
+                "data": [
+                    {"state": {
+                        "group": "process_0",
+                        "name": "process_0",
+                        "statename": "STOPPING",
+                        "pid": 8593,
+                        "start": 1460513750,
+                        "state": 40
+                        }
+                    },
+                    {"state": {
+                        "group": "process_0",
+                        "name": "process_0",
+                        "statename": "STOPPED",
+                        "pid": null,
+                        "start": 1460613280,
+                        "state": 0
+                        }
+                    },
+                    {"state": {
+                        "group": "process_0",
+                        "name": "process_0",
+                        "statename": "STARTING",
+                        "pid": null,
+                        "start": 1460613280,
+                        "state": 10
+                        }
+                    },
+                    {"state": {
+                        "group": "process_0",
+                        "name": "process_0",
+                        "statename": "RUNNING",
+                        "pid": 20289,
+                        "start": 1460613280,
+                        "state": 20
+                        }
+                    }
+                ],
+                "valid": true
+            },
+            {
+                "description": "invalid data",
+                "data": [
+                    {"state": {
+                        "group": "process_0",
+                        "name": "process_0",
+                        "statename": "INVALID_STATE",
+                        "pid": -8593,
+                        "start": -1460513750,
+                        "state": 40
+                        }
+                    },
+                    {"state": {
+                        "group": "process_0",
+                        "name": 1234,
+                        "statename": "STOPPED",
+                        "pid": null,
+                        "start": 1460613280,
+                        "state": 0
+                        }
+                    }
+                ],
+                "valid": false
+            },
+            {
+                "description": "invalid data",
+                "data": [
+                    {"state": {
+                        "group": "process_0",
+                        "name": "process_0",
+                        "statename": "RUNNING",
+                        "pid": "20289",
+                        "start": 1460613280,
+                        "state": 15
+                        }
+                    }
+                ],
+                "valid": false
+            },
+            {
+                "description": "invalid data",
+                "data": [
+                    {"state": {
+                        "group": 1234,
+                        "name": "process_0",
+                        "statename": "STARTING",
+                        "pid": null,
+                        "start": 1460613280,
+                        "state": 10
+                        }
+                    }
+                ],
+                "valid": false
+            }
+        ]
+    }
+]

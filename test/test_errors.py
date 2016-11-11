@@ -8,3 +8,7 @@ class TestErrors(unittest.TestCase):
 
     def test_schema_error(self):
     	self.assertIsNotNone(SchemaError())
+
+
+if __name__ == '__main__':
+	unittest.main()
