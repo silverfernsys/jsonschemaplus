@@ -51,9 +51,9 @@ def resolve(schema, copy=False):
                     if (value == 'http://json-schema.org/draft-04/schema#'
                         and root != metaschema):
                         schema.update(deepcopy(metaschema))
-                    elif (value == 'http://json-schema.org/draft-04/hyper-schema#'
-                        and root != hyperschema):
-                        schema.update(deepcopy(hyperschema))
+                    # elif (value == 'http://json-schema.org/draft-04/hyper-schema#'
+                    #     and root != hyperschema):
+                    #     schema.update(deepcopy(hyperschema))
                     else:
                         try:
                             (url_, path_) = url(value)
@@ -76,7 +76,7 @@ def resolve(schema, copy=False):
                     schema.update(_path(data, path_))
                     _resolve_refs(schema, root, id_acc)
                 else:
-                    _resolve_refs(value, root, id_acc)
+                    raise SchemaError('Error resolving schema with $ref: %s' % value)
             for k, v in schema.items():
                 if k != ref and k != id_ and v != root:
                     _resolve_refs(v, root, id_acc)
@@ -98,11 +98,11 @@ def resolve(schema, copy=False):
                     index = int(c)
                     subschema = subschema[index]
                 except:
-                    raise ValueError('Invalid path %s' % path)
+                    raise SchemaError('Invalid path %s' % path)
             elif object_(subschema):
                 subschema = subschema.get(c)
             else:
-                raise ValueError('Invalid path %s' % path)
+                raise SchemaError('Invalid path %s' % path)
         return subschema
 
     resolve.resolve_refs = _resolve_refs

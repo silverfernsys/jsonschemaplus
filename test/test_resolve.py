@@ -1,6 +1,16 @@
 from jsonschemaplus.resolver import resolve
 from jsonschemaplus.schemas import metaschema
+from jsonschemaplus.errors import SchemaError
+from test.mocks import MockRequestResponse
 import unittest
+
+
+try:
+    from urllib2 import URLError
+    import mock
+except:
+    from urllib.error import URLError
+    from unittest import mock
 
 
 class TestResolve(unittest.TestCase):
@@ -98,7 +108,7 @@ class TestResolve(unittest.TestCase):
         self.assertEquals(metaschema['properties']['not'], resolve.path(metaschema, '#'))
         self.assertEquals(metaschema['properties']['not'], metaschema)
 
-    def test_path(self):
+    def test_resolve_schema(self):
         schema = {'properties': {'foo': {'$ref': '#'}}, 'additionalProperties': False}
         resolved_schema = resolve(schema, copy=True)
         self.assertNotEquals(schema, schema['properties']['foo'], 'foo does not point to root')
@@ -147,6 +157,42 @@ class TestResolve(unittest.TestCase):
         schema = {'properties': {'$ref': {'type': 'string'}}}
         metaschema = resolve(schema, copy=True)
         self.assertEquals(schema, metaschema, 'schema structure is not modified')
+
+    @mock.patch('jsonschemaplus.resolver.get')
+    def test_schema_error(self, mock_get):
+        mock_get.side_effect = URLError('error')
+
+        schema = {'id': '#/definitions/a', 'definitions': {'a': {'type': 'integer'}}}
+        with self.assertRaises(SchemaError) as context:
+            resolve(schema)
+        self.assertEquals(context.exception.message, 'Error resolving schema with id: #/definitions/a')
+
+        schema = {'id': 'http://example.com/schema#', 'definitions': {'a': {'id': '###'}}}
+        with self.assertRaises(SchemaError) as context:
+            resolve(schema)
+        self.assertEquals(context.exception.message, 'Error resolving schema with id: ###')
+
+        schema = {'$ref': 'http://badurl.com/#'}
+        with self.assertRaises(SchemaError) as context:
+            resolve(schema)
+        self.assertEquals(context.exception.message, 'Error resolving schema with $ref: http://badurl.com/#')
+
+        schema = {'$ref': 'invalid_uri'}
+        with self.assertRaises(SchemaError) as context:
+            resolve(schema)
+        self.assertEquals(context.exception.message, 'Error resolving schema with $ref: invalid_uri')
+
+    def test_path_errors(self):
+        schema = {'type': 'object', 'properties': {'foo': {'type': 'integer', 'bar': {'$ref': '#/type'}}}}
+        with self.assertRaises(SchemaError) as context:
+            resolve.path(schema, '#/properties/foo/type/baz')
+        self.assertEquals(context.exception.message, 'Invalid path #/properties/foo/type/baz')
+
+        schema = {'type': 'object', 'properties': {'foo': {'type': 'array', 'items':
+            [{'type': 'integer'}, {'type': 'float'}, {'type': 'string'}]}}}
+        with self.assertRaises(SchemaError) as context:
+            resolve.path(schema, '#/properties/foo/items/b')
+        self.assertEquals(context.exception.message, 'Invalid path #/properties/foo/items/b')
 
 
 if __name__ == '__main__':
