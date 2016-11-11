@@ -1,12 +1,9 @@
-import sys
-
-
-if sys.version_info > (3,):
+try:
+    validation_pattern = unicode('<ValidationError(message=%s)>')
+    schema_pattern = unicode('<SchemaError(message=%s)>')
+except:
     validation_pattern = '<ValidationError(message=%s)>'
-    schema_pattern = '<SchemaError(message=%s)>'
-else:
-    validation_pattern = u'<ValidationError(message=%s)>'
-    schema_pattern = u'<SchemaError(message=%s)>'
+    schema_pattern = '<SchemaError(message=%s)>'    
 
 
 class ValidationError(Exception):
