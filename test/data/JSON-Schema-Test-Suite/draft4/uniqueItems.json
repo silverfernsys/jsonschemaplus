@@ -75,5 +75,82 @@
                 "valid": false
             }
         ]
+    },
+    {
+        "description": "uniqueItems validation",
+        "schema": {"uniqueItems": false},
+        "tests": [
+            {
+                "description": "unique array of integers is valid",
+                "data": [1, 2],
+                "valid": true
+            },
+            {
+                "description": "non-unique array of integers is valid",
+                "data": [1, 1],
+                "valid": true
+            },
+            {
+                "description": "numbers are valid",
+                "data": [1.0, 1.00, 1],
+                "valid": true
+            },
+            {
+                "description": "unique array of objects is valid",
+                "data": [{"foo": "bar"}, {"foo": "baz"}],
+                "valid": true
+            },
+            {
+                "description": "non-unique array of objects is valid",
+                "data": [{"foo": "bar"}, {"foo": "bar"}],
+                "valid": true
+            },
+            {
+                "description": "unique array of nested objects is valid",
+                "data": [
+                    {"foo": {"bar" : {"baz" : true}}},
+                    {"foo": {"bar" : {"baz" : false}}}
+                ],
+                "valid": true
+            },
+            {
+                "description": "non-unique array of nested objects is valid",
+                "data": [
+                    {"foo": {"bar" : {"baz" : true}}},
+                    {"foo": {"bar" : {"baz" : true}}}
+                ],
+                "valid": true
+            },
+            {
+                "description": "unique array of arrays is valid",
+                "data": [["foo"], ["bar"]],
+                "valid": true
+            },
+            {
+                "description": "non-unique array of arrays is valid",
+                "data": [["foo"], ["foo"]],
+                "valid": true
+            },
+            {
+                "description": "1 and true are valid",
+                "data": [1, true],
+                "valid": true
+            },
+            {
+                "description": "0 and false are valid",
+                "data": [0, false],
+                "valid": true
+            },
+            {
+                "description": "unique heterogeneous types are valid",
+                "data": [{}, [1], true, null, 1],
+                "valid": true
+            },
+            {
+                "description": "non-unique heterogeneous types are valid",
+                "data": [{}, [1], true, null, {}, 1],
+                "valid": true
+            }
+        ]
     }
 ]

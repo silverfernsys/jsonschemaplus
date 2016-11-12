@@ -112,15 +112,15 @@ class Draft4Validator(object):
 
     def _format(self, data, schema):
         format_ = schema.get('format')
-        if format_:
-            validator = self.formats.get(format_)
-            if validator:
-                if not validator(data):
-                    yield ValidationError('"%s" is not of format "%s".'
-                        % (data, format_))
-            else:
-                yield ValidationError('Unrecognized format "%s".'
-                    % (format_))
+        # 'format' in schema == True
+        validator = self.formats.get(format_)
+        if validator:
+            if not validator(data):
+                yield ValidationError('"%s" is not of format "%s".'
+                    % (data, format_))
+        else:
+            yield ValidationError('Unrecognized format "%s".'
+                % (format_))
 
     def _maximum(self, data, schema):
         max_value = schema.get('maximum')
@@ -179,7 +179,7 @@ class Draft4Validator(object):
         if type(item_type) == dict:
             for item in data:
                 yield self.flattened_errors(self._errors(item, item_type))
-        elif type(item_type) == list:
+        else: # type(item_type) == list:
             additional_items = schema.get('additionalItems', True)
             if len(item_type) > len(data):
                 yield ValidationError('items.length > data.length')
@@ -221,46 +221,46 @@ class Draft4Validator(object):
 
     def _not(self, data, schema):
         not_schema = schema.get('not')
-        if not_schema is not None:
-            if next(self.flattened_errors(self._errors(data, not_schema)), self._flag) == self._flag:
-                yield ValidationError('Error validating "%s" with NOT schema "%s".'
-                    % (data, not_schema))
+        # 'not' in schema == True
+        if next(self.flattened_errors(self._errors(data, not_schema)), self._flag) == self._flag:
+            yield ValidationError('Error validating "%s" with NOT schema "%s".'
+                % (data, not_schema))
 
     def _all_of(self, data, schema):
         all_of_schema = schema.get('allOf')
-        if all_of_schema is not None:
-            error_found = False
-            for subschema in all_of_schema:
-                for error in self.flattened_errors(self._errors(data, subschema)):
-                    if not error_found:
-                        error_found = True
-                        yield ValidationError('Error validating "%s" with allOf schema "%s".'
-                            % (data, all_of_schema))
-                    yield error
+        # 'allOf' in schema == True
+        error_found = False
+        for subschema in all_of_schema:
+            for error in self.flattened_errors(self._errors(data, subschema)):
+                if not error_found:
+                    error_found = True
+                    yield ValidationError('Error validating "%s" with allOf schema "%s".'
+                        % (data, all_of_schema))
+                yield error
 
     def _any_of(self, data, schema):
         """ Yield an error if all schemas fail. """
         any_of_schema = schema.get('anyOf')
-        if any_of_schema is not None:
-            error_count = 0
-            for subschema in any_of_schema:
-                if next(self.flattened_errors(self._errors(data, subschema)), self._flag) != self._flag:
-                    error_count += 1
-            if error_count == len(any_of_schema):
-                yield ValidationError('Error validating "%s" with anyOf schema "%s".'
-                    % (data, any_of_schema))
+        # 'anyOf' in schema == True
+        error_count = 0
+        for subschema in any_of_schema:
+            if next(self.flattened_errors(self._errors(data, subschema)), self._flag) != self._flag:
+                error_count += 1
+        if error_count == len(any_of_schema):
+            yield ValidationError('Error validating "%s" with anyOf schema "%s".'
+                % (data, any_of_schema))
 
     def _one_of(self, data, schema):
         """ Yield an error if more than one or zero schemas validate. """
         one_of_schema = schema.get('oneOf')
-        if one_of_schema is not None:
-            validate_count = 0
-            for subschema in one_of_schema:
-                if next(self.flattened_errors(self._errors(data, subschema)), self._flag) == self._flag:
-                    validate_count += 1
-            if validate_count != 1:
-                yield ValidationError('Error validating "%s" with oneOf schema "%s".'
-                    % (data, one_of_schema))
+        # 'oneOf' in schmea == True
+        validate_count = 0
+        for subschema in one_of_schema:
+            if next(self.flattened_errors(self._errors(data, subschema)), self._flag) == self._flag:
+                validate_count += 1
+        if validate_count != 1:
+            yield ValidationError('Error validating "%s" with oneOf schema "%s".'
+                % (data, one_of_schema))
 
     def _required(self, data, schema):
         for key in schema.get('required', {}):
@@ -270,11 +270,11 @@ class Draft4Validator(object):
 
     def _pattern(self, data, schema):
         regex = schema.get('pattern')
-        if regex:
-            r = re.compile(regex)
-            if not r.search(data):
-                yield ValidationError('Error validating "%s." Does not match pattern "%s".'
-                    % (data, regex))
+        # 'pattern' in schema == True
+        r = re.compile(regex)
+        if not r.search(data):
+            yield ValidationError('Error validating "%s." Does not match pattern "%s".'
+                % (data, regex))
 
     def _properties(self, data, schema):
         properties = schema.get('properties', {})
@@ -323,7 +323,7 @@ class Draft4Validator(object):
                         if dependency not in data:
                             yield ValidationError('Error validating "%s." Missing dependency "%s"'
                                 ' of "%s" ' % (data, dependency, key))
-                elif type(value) == dict:
+                else: # type(value) == dict:
                     gen = self.flattened_errors(self._properties(data, value))
                     err = next(gen, self._flag)
                     if err != self._flag:
