@@ -122,9 +122,6 @@ class Draft4Validator(object):
                 yield ValidationError('Unrecognized format "%s".'
                     % (format_))
 
-    def _definitions(self, data, schema):
-        def_schema = schema.get('definitions')
-
     def _maximum(self, data, schema):
         max_value = schema.get('maximum')
         exclusive = schema.get('exclusiveMaximum', False)
@@ -357,7 +354,7 @@ class Draft4Validator(object):
         self._validate(schema, metaschema)
     
     def _validate(self, data, schema):
-        error = next(self.errors(data, schema), self._flag)
+        error = next(self.errors(data, schema=schema), self._flag)
         if error != self._flag:
             raise error
 
@@ -368,5 +365,9 @@ class Draft4Validator(object):
         except ValidationError:
             return False
 
-    # def is_schema_valid(self):
-    #     try:
+    def is_schema_valid(self):
+        try:
+            self._validate_schema(self._schema)
+            return True
+        except ValidationError:
+            return False

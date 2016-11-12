@@ -14,15 +14,24 @@ root = dirname(abspath(__file__))
    
 
 class TestValidatorsWithSuite(JSONSchemaPlusTest):
+    def test_all_of_errors(self):
+        self.run_errors((root, 'data', 'JSON-Schema-Test-Suite', 'draft4', 'allOf.json'))
+
+    def test_dependencies_errors(self):
+        self.run_errors((root, 'data', 'JSON-Schema-Test-Suite', 'draft4', 'dependencies.json'))
+
     def test_optionals(self):
-        self.run_test((root, 'data', 'JSON-Schema-Test-Suite', 'draft4', 'optional', '*.json'))
+        self.run_validation((root, 'data', 'JSON-Schema-Test-Suite', 'draft4', 'optional', '*.json'))
+
+    def test_other(self):
+        self.run_validation((root, 'data', 'other', 'draft4', 'unknownFormat.json'))
 
     @mock.patch('jsonschemaplus.resolver.get')
     def test_draft4(self, mock_get):
         m = MockRequestResponse((root, 'data', 'JSON-Schema-Test-Suite',
             'draft4', 'refRemote'))
         mock_get.side_effect = lambda url: m.json(url)
-        self.run_test((root, 'data', 'JSON-Schema-Test-Suite', 'draft4', '*.json'))
+        self.run_validation((root, 'data', 'JSON-Schema-Test-Suite', 'draft4', '*.json'))
 
 
 if __name__ == '__main__':

@@ -20,5 +20,6 @@ class MockRequestResponse(object):
     def json(self, url=None):
         if url != None:
             components = self._components + urlparse(url).path.split('/')
-            self._data = json_.loads(open(path(components)).read())
+            with open(path(components)) as file:
+                self._data = json_.loads(file.read())
         return self._data

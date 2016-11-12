@@ -8,27 +8,32 @@
             {
                 "description": "neither",
                 "data": {},
-                "valid": true
+                "valid": true,
+                "error_count": 0
             },
             {
                 "description": "nondependant",
                 "data": {"foo": 1},
-                "valid": true
+                "valid": true,
+                "error_count": 0
             },
             {
                 "description": "with dependency",
                 "data": {"foo": 1, "bar": 2},
-                "valid": true
+                "valid": true,
+                "error_count": 0
             },
             {
                 "description": "missing dependency",
                 "data": {"bar": 2},
-                "valid": false
+                "valid": false,
+                "error_count": 1
             },
             {
                 "description": "ignores non-objects",
                 "data": "foo",
-                "valid": true
+                "valid": true,
+                "error_count": 0
             }
         ]
     },
@@ -41,32 +46,38 @@
             {
                 "description": "neither",
                 "data": {},
-                "valid": true
+                "valid": true,
+                "error_count": 0
             },
             {
                 "description": "nondependants",
                 "data": {"foo": 1, "bar": 2},
-                "valid": true
+                "valid": true,
+                "error_count": 0
             },
             {
                 "description": "with dependencies",
                 "data": {"foo": 1, "bar": 2, "quux": 3},
-                "valid": true
+                "valid": true,
+                "error_count": 0
             },
             {
                 "description": "missing dependency",
                 "data": {"foo": 1, "quux": 2},
-                "valid": false
+                "valid": false,
+                "error_count": 1
             },
             {
                 "description": "missing other dependency",
                 "data": {"bar": 1, "quux": 2},
-                "valid": false
+                "valid": false,
+                "error_count": 1
             },
             {
                 "description": "missing both dependencies",
                 "data": {"quux": 1},
-                "valid": false
+                "valid": false,
+                "error_count": 2
             }
         ]
     },
@@ -86,27 +97,32 @@
             {
                 "description": "valid",
                 "data": {"foo": 1, "bar": 2},
-                "valid": true
+                "valid": true,
+                "error_count": 0
             },
             {
                 "description": "no dependency",
                 "data": {"foo": "quux"},
-                "valid": true
+                "valid": true,
+                "error_count": 0
             },
             {
                 "description": "wrong type",
                 "data": {"foo": "quux", "bar": 2},
-                "valid": false
+                "valid": false,
+                "error_count": 2
             },
             {
                 "description": "wrong type other",
                 "data": {"foo": 2, "bar": "quux"},
-                "valid": false
+                "valid": false,
+                "error_count": 2
             },
             {
                 "description": "wrong type both",
                 "data": {"foo": "quux", "bar": "quux"},
-                "valid": false
+                "valid": false,
+                "error_count": 3
             }
         ]
     }
