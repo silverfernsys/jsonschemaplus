@@ -1,0 +1,48 @@
+[
+    {
+        "description": "validation of a string with an unknown format",
+        "schema": {"format": "unknown-format"},
+        "tests": [
+            {
+                "description": "a string",
+                "data": "random string",
+                "valid": false
+            },
+            {
+                "description": "an integer",
+                "data": 200,
+                "valid": true
+            },
+            {
+                "description": "a float",
+                "data": 200.1,
+                "valid": true
+            },
+            {
+                "description": "a float",
+                "data": 200.1,
+                "valid": true
+            },
+            {
+                "description": "a boolean",
+                "data": true,
+                "valid": true
+            },
+            {
+                "description": "a null",
+                "data": null,
+                "valid": true
+            },
+            {
+                "description": "an array",
+                "data": ["a", "b", "c"],
+                "valid": true
+            },
+            {
+                "description": "an object",
+                "data": {"a": 1, "b": 2, "c": 3},
+                "valid": true
+            }
+        ]
+    }
+]

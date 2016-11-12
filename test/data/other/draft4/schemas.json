@@ -1,0 +1,84 @@
+[
+    {
+        "description": "validate schemas",
+        "tests": [
+            {
+                "description": "an invalid schema",
+                "data": [1, 2, 3],
+                "valid": false
+            },
+            {
+                "description": "an invalid schema",
+                "data": "a string cannot be a schema",
+                "valid": false
+            },
+            {
+                "description": "an invalid schema",
+                "data": 1,
+                "valid": false
+            },
+            {
+                "description": "an invalid schema",
+                "data": null,
+                "valid": false
+            },
+            {
+                "description": "a valid schema",
+                "data": {"type": "boolean"},
+                "valid": true
+            },
+            {
+                "description": "a valid schema",
+                "data": {
+                    "title": "Supervisor Command",
+                    "type": "object",
+                    "properties": {
+                        "cmd": {
+                            "type": "string",
+                            "enum": ["start", "stop", "restart", "sub", "unsub"] 
+                        },
+                        "id": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "process": {
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    },
+                    "required": ["cmd", "id", "process"]
+                },
+                "valid": true
+            },
+            {
+                "description": "a valid schema",
+                "data": {
+                    "title": "Test Schema",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "a": {
+                                "enum": ["a", "b", "c", 1]
+                            },
+                            "b": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 3
+                            },
+                            "c": {
+                                "minLength": 3
+                            }
+                        },
+                        "required": ["b", "c"]
+                    },
+                    "minimum": 1,
+                    "maximum": 4,
+                    "maxLength": 3,
+                    "maxItems": 2
+                },
+                "valid": true
+            }
+        ]
+    }
+]
