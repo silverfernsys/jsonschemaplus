@@ -1,0 +1,3 @@
+jsonschema
+tabulate
+termcolor

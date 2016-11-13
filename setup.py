@@ -78,6 +78,7 @@ setup(
 
     extras_require={
         'test': test_extras,
-        'docs': ['mkdocs']
+        'docs': ['mkdocs'],
+        'benchmark': ['jsonschema', 'tabulate', 'termcolor']
     },
 )
