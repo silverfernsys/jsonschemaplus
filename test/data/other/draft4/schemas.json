@@ -28,17 +28,17 @@
                 "valid": true
             },
             {
-                "description": "a valid type",
+                "description": "an invalid type",
                 "data": {"type": ["object", "unknown"]},
                 "valid": false
             },
             {
-                "description": "a invalid type",
+                "description": "an invalid type",
                 "data": {"type": "unknown"},
                 "valid": false
             },
             {
-                "description": "a valid schema",
+                "description": "an invalid type",
                 "data": {"type": {"data": "bad"}},
                 "valid": false
             },

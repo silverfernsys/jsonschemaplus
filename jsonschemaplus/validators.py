@@ -203,12 +203,10 @@ class Draft4Validator(object):
                     break
             if not validates:
                 yield ValidationError(ValidationError.Type.TYPE, t, data)
-        elif string(type_):
+        else:
             validator = self._types[type_]
             if not validator(data):
                 yield ValidationError(ValidationError.Type.TYPE, type_, data)
-        else:
-            yield ValidationError(ValidationError.Type.TYPE, type_, data)
 
     def _not(self, data, schema):
         not_schema = schema.get('not')

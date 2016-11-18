@@ -5,8 +5,10 @@ from jsonschemaplus.errors import ValidationError, SchemaError, validation_patte
 class TestErrors(unittest.TestCase):
     def test_validation_error(self):
         v = ValidationError(ValidationError.Type.ENUM, ['a', 'b', 'c'], 'd', misc='something')
-        self.assertEqual(v.__str__(), validation_pattern %
-            (ValidationError.Type.ENUM.name, ['a', 'b', 'c'], 'd', None))
+        t = (ValidationError.Type.ENUM.name, ['a', 'b', 'c'], 'd', None)
+        self.assertEqual(v.__str__(), validation_pattern % t)
+        self.assertEqual(v.__unicode__(), validation_pattern % t)
+        self.assertEqual(v.__repr__(), validation_pattern % t)
         self.assertEqual(v.error, ValidationError.Type.ENUM)
         self.assertEqual(v.schema, ['a', 'b', 'c'])
         self.assertEqual(v.data, 'd')
