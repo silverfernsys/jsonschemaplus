@@ -110,19 +110,19 @@
                 "description": "wrong type",
                 "data": {"foo": "quux", "bar": 2},
                 "valid": false,
-                "error_count": 2
+                "error_count": 1
             },
             {
                 "description": "wrong type other",
                 "data": {"foo": 2, "bar": "quux"},
                 "valid": false,
-                "error_count": 2
+                "error_count": 1
             },
             {
                 "description": "wrong type both",
                 "data": {"foo": "quux", "bar": "quux"},
                 "valid": false,
-                "error_count": 3
+                "error_count": 1
             }
         ]
     }

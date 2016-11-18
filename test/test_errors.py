@@ -1,30 +1,23 @@
 import unittest
-from jsonschemaplus.errors import ValidationError, SchemaError
-
-  
-try:
-    validation_pattern = unicode('<ValidationError(message=%s)>')
-    schema_pattern = unicode('<SchemaError(message=%s)>')
-except:
-    validation_pattern = '<ValidationError(message=%s)>'
-    schema_pattern = '<SchemaError(message=%s)>'
+from jsonschemaplus.errors import ValidationError, SchemaError, validation_pattern, schema_pattern
 
 
 class TestErrors(unittest.TestCase):
     def test_validation_error(self):
-    	ve = ValidationError('msg')
-    	self.assertIsNotNone(ve)
-    	self.assertEqual(ve.__str__(), validation_pattern % 'msg')
-    	self.assertEqual(ve.__unicode__(), validation_pattern % 'msg')
-    	self.assertEqual(ve.__repr__(), validation_pattern % 'msg')
+        v = ValidationError(ValidationError.Type.ENUM, ['a', 'b', 'c'], 'd', misc='something')
+        self.assertEqual(v.__str__(), validation_pattern %
+            (ValidationError.Type.ENUM.name, ['a', 'b', 'c'], 'd', None))
+        self.assertEqual(v.error, ValidationError.Type.ENUM)
+        self.assertEqual(v.schema, ['a', 'b', 'c'])
+        self.assertEqual(v.data, 'd')
 
     def test_schema_error(self):
-    	se = SchemaError('msg')
-    	self.assertIsNotNone(se)
-    	self.assertEqual(se.__str__(), schema_pattern % 'msg')
-    	self.assertEqual(se.__unicode__(), schema_pattern % 'msg')
-    	self.assertEqual(se.__repr__(), schema_pattern % 'msg')
+        se = SchemaError('msg')
+        self.assertIsNotNone(se)
+        self.assertEqual(se.__str__(), schema_pattern % 'msg')
+        self.assertEqual(se.__unicode__(), schema_pattern % 'msg')
+        self.assertEqual(se.__repr__(), schema_pattern % 'msg')
 
 
 if __name__ == '__main__':
-	unittest.main()
+    unittest.main()

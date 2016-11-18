@@ -12,6 +12,8 @@ class JSONSchemaPlusTest(unittest.TestCase):
                 calling_func_name = stack()[1][3]
                 for test in data['tests']:
                     is_valid = validator.is_valid(test['data'])
+                    # if is_valid != test['valid']:
+                    #     print('test: %s, path: %s' % (test['data'], path))
                     self.assertEqual(is_valid, test['valid'], calling_func_name)
 
     def run_error_count(self, path):
@@ -20,8 +22,12 @@ class JSONSchemaPlusTest(unittest.TestCase):
                 validator = Draft4Validator(data['schema'])
                 calling_func_name = stack()[1][3]
                 for test in data['tests']:
-                    error_count = len(list(validator.errors(test['data'])))
-                    # print('error_count: %s, test.error_count: %s' % (error_count, test['error_count']))
+                    errors = list(validator.errors(test['data']))
+                    error_count = len(errors)
+                    # if error_count != test['error_count']:
+                    #     print('test: %s' % test['data'])
+                    #     print('error_count: %s, test.error_count: %s' % (error_count, test['error_count']))
+                    #     print('errors: %s' % errors)
                     self.assertEqual(error_count, test['error_count'], calling_func_name)
 
     def run_validation(self, components):

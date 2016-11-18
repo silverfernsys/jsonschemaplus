@@ -28,19 +28,19 @@
                 "description": "mismatch second",
                 "data": {"foo": "baz"},
                 "valid": false,
-                "error_count": 2
+                "error_count": 1
             },
             {
                 "description": "mismatch first",
                 "data": {"bar": 2},
                 "valid": false,
-                "error_count": 2
+                "error_count": 1
             },
             {
                 "description": "wrong type",
                 "data": {"foo": "baz", "bar": "quux"},
                 "valid": false,
-                "error_count": 2
+                "error_count": 1
             }
         ]
     },
@@ -81,19 +81,19 @@
                 "description": "mismatch first allOf",
                 "data": {"bar": 2, "baz": null},
                 "valid": false,
-                "error_count": 2
+                "error_count": 1
             },
             {
                 "description": "mismatch second allOf",
                 "data": {"foo": "quux", "bar": 2},
                 "valid": false,
-                "error_count": 2
+                "error_count": 1
             },
             {
                 "description": "mismatch both",
                 "data": {"bar": 2},
                 "valid": false,
-                "error_count": 3
+                "error_count": 1
             }
         ]
     },
@@ -116,7 +116,7 @@
                 "description": "mismatch one",
                 "data": 35,
                 "valid": false,
-                "error_count": 2
+                "error_count": 1
             }
         ]
     }

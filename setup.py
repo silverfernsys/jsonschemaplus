@@ -67,6 +67,9 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['rfc3986', 'rfc3987', 'strict-rfc3339'],
 
+    if version_info < (3, 4):
+        install_requires.append('enum34')
+        
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:

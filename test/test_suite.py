@@ -19,9 +19,12 @@ class TestValidatorsWithSuite(JSONSchemaPlusTest):
 
     def test_dependencies_errors(self):
         self.run_errors((root, 'data', 'JSON-Schema-Test-Suite', 'draft4', 'dependencies.json'))
-
+    
     def test_optionals(self):
         self.run_validation((root, 'data', 'JSON-Schema-Test-Suite', 'draft4', 'optional', '*.json'))
+
+    def test_any_of(self):
+        self.run_validation((root, 'data', 'JSON-Schema-Test-Suite', 'draft4', 'anyOf.json'))
 
     def test_other(self):
         self.run_validation((root, 'data', 'other', 'draft4', 'unknownFormat.json'))

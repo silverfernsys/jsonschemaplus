@@ -11,6 +11,13 @@ from jsonschemaplus.schemas import metaschema, hyperschema
 from jsonschemaplus.parsers import url
 from jsonschemaplus.requests import get
 from jsonschemaplus.resolver import resolve
+from jsonschemaplus.gen import ParserIterator
+
+
+try:
+    from itertools import izip as zip
+except:
+    pass
 
 
 if sys.version_info > (3,):
@@ -82,14 +89,15 @@ class Draft4Validator(object):
             'null': null,
             'number': number,
             'object': object_,
-            'string': string,
-            'valid': valid
+            'string': string
         }
 
-    def errors(self, data, flatten=True, schema=None):
+        self._regex_cache = {}
+
+    def errors(self, data, schema=None):
         if schema is None:
             schema = self._schema
-        return self.flattened_errors(self._errors(data, schema))
+        return ParserIterator(self._errors(data, schema))
 
     def _errors(self, data, schema):
         try:
@@ -102,179 +110,161 @@ class Draft4Validator(object):
                         processed_properties = True
                         yield self._validators[key](data, schema)
         except KeyError as e:
-            yield ValidationError('Invalid data type: %s' % data.__class__.__name__)
+            yield ValidationError(ValidationError.Type.TYPE, self._types.keys(), data)
 
     def _enum(self, data, schema):
         enums = schema.get('enum')
         if enums and not enum(data, enums):
-            yield ValidationError('%s is not in enum list %s'
-                % (data, enums))
+            yield ValidationError(ValidationError.Type.ENUM, enums, data)
 
     def _format(self, data, schema):
         format_ = schema.get('format')
-        # 'format' in schema == True
         validator = self.formats.get(format_)
         if validator:
             if not validator(data):
-                yield ValidationError('"%s" is not of format "%s".'
-                    % (data, format_))
+                yield ValidationError(ValidationError.Type.FORMAT, format_, data)
         else:
-            yield ValidationError('Unrecognized format "%s".'
-                % (format_))
+            # TODO: this should be moved to schema validation!
+            yield ValidationError(ValidationError.Type.FORMAT, format_, data)
 
     def _maximum(self, data, schema):
         max_value = schema.get('maximum')
         exclusive = schema.get('exclusiveMaximum', False)
         if max_value is not None and not maximum(data, max_value, exclusive):
-            yield ValidationError('%s is greater than maximum of %s'
-                % (data, max_value))
+            yield ValidationError(ValidationError.Type.MAXIMUM, max_value, data, exclusive=exclusive)
 
     def _max_items(self, data, schema):
         num_items = schema.get('maxItems')
         if num_items is not None and not max_items(data, num_items):
-            yield ValidationError('%s contains more than a maximum of %s items.'
-                % (data, num_items))
+            yield ValidationError(ValidationError.Type.MAX_ITEMS, num_items, data)
 
     def _max_length(self, data, schema):
         length = schema.get('maxLength')
         if length is not None and not max_length(data, length):
-            yield ValidationError('%s length not under maximum length of %s'
-                % (data, length))
+            yield ValidationError(ValidationError.Type.MAX_LENGTH, length, data)
 
     def _minimum(self, data, schema):
         min_value = schema.get('minimum')
         exclusive = schema.get('exclusiveMinimum', False)
         if min_value is not None and not minimum(data, min_value, exclusive):
-            yield ValidationError('%s not at least minimum of %s'
-                % (data, min_value))
+            yield ValidationError(ValidationError.Type.MINIMUM, min_value, data, exclusive=exclusive)
 
     def _min_items(self, data, schema):
         num_items = schema.get('minItems')
         if num_items is not None and not min_items(data, num_items):
-            yield ValidationError('%s does not contain a minimum of %s items.'
-                % (data, num_items))
+            yield ValidationError(ValidationError.Type.MIN_ITEMS, num_items, data)
 
     def _min_length(self, data, schema):
         length = schema.get('minLength')
         if length is not None and not min_length(data, length):
-            yield ValidationError('%s length not at least minimum length of %s'
-                % (data, length))
+            yield ValidationError(ValidationError.Type.MIN_LENGTH, length, data)
 
     def _multiple_of(self, data, schema):
         multiple = schema.get('multipleOf')
         if multiple is not None and not multiple_of(data, multiple):
-            yield ValidationError('%s not multiple of %s.'
-                % (data, multiple))
+            yield ValidationError(ValidationError.Type.MULTIPLE_OF, multiple, data)
 
     def _unique_items(self, data, schema):
         if schema.get('uniqueItems', False):
-            for i in range(len(data) - 1):
-                for j in range(i + 1, len(data)):
-                    if (data[i] == data[j] and
-                        type(data[i]) == type(data[j])):
-                            yield ValidationError('Items are not unique.')
-
+            for i, x in enumerate(data[0:-1]):
+                for y in data[i + 1:]:
+                    if(x == y and type(x) == type(y)):
+                        yield ValidationError(ValidationError.Type.UNIQUE_ITEMS, True, data)
+    
     def _items(self, data, schema):
-        item_type = schema.get('items')
-        if type(item_type) == dict:
+        items = schema.get('items')
+        if type(items) == dict:
             for item in data:
-                yield self.flattened_errors(self._errors(item, item_type))
-        else: # type(item_type) == list:
-            additional_items = schema.get('additionalItems', True)
-            if len(item_type) > len(data):
-                yield ValidationError('items.length > data.length')
+                yield self.errors(item, items)
+        else:
+            additional = schema.get('additionalItems', True)
+            if len(items) > len(data):
+                yield ValidationError(ValidationError.Type.ITEMS, items, data)
             else:
-                for i in range(len(item_type)):
-                    yield self._type(data[i], item_type[i])
-                if len(item_type) < len(data):
-                    if additional_items == False:
-                        yield ValidationError('No additional items allowed.')
-                    elif type(additional_items) == dict:
-                        for i in range(len(item_type), len(data)):
-                            yield self._type(data[i], additional_items)
+                for x, y in zip(data, items):
+                    yield self.errors(x, y)
+                len_data = len(data)
+                len_items = len(items)
+                if len_data > len_items:
+                    if additional == False:
+                        yield ValidationError(ValidationError.Type.ADDITIONAL_ITEMS, False, data[len_items:])
+                    elif type(additional) == dict:
+                        for x in data[len_items:]:
+                            yield self.errors(x, additional)
 
     def _type(self, data, schema):
-        validates = False
-        type_name = schema.get('type', 'valid')
-        if array(type_name):
-            for name in type_name:
-                try:
-                    validator = self._types[name]
-                    if validator(data):
-                        validates = True
-                        break
-                except KeyError:
-                    yield ValidationError('Unknown type %s' % name)
+        type_ = schema.get('type')
+        if array(type_):
+            validates = False
+            for t in type_:
+                validator = self._types[t]
+                if validator(data):
+                    validates = True
+                    break
             if not validates:
-                yield ValidationError('Type of data %s does not match '
-                    'types in %s.' % (data.__class__.__name__, type_name))
-        elif string(type_name):
-            try:
-                validator = self._types[type_name]
-                if not validator(data):
-                    yield ValidationError('Type of data %s does not match %s.'
-                        % (data.__class__.__name__, type_name))
-            except KeyError:
-                yield ValidationError('Unknown type %s' % type_name)
+                yield ValidationError(ValidationError.Type.TYPE, t, data)
+        elif string(type_):
+            validator = self._types[type_]
+            if not validator(data):
+                yield ValidationError(ValidationError.Type.TYPE, type_, data)
         else:
-            yield ValidationError('Unknown type: %s' % type_name)
+            yield ValidationError(ValidationError.Type.TYPE, type_, data)
 
     def _not(self, data, schema):
         not_schema = schema.get('not')
-        # 'not' in schema == True
-        if next(self.flattened_errors(self._errors(data, not_schema)), self._flag) == self._flag:
-            yield ValidationError('Error validating "%s" with NOT schema "%s".'
-                % (data, not_schema))
+        if not self.errors(data, not_schema).lookahead():
+            yield ValidationError(ValidationError.Type.NOT, not_schema, data)
 
     def _all_of(self, data, schema):
         all_of_schema = schema.get('allOf')
-        # 'allOf' in schema == True
-        error_found = False
+        invalid_schemas = []
+        errors = []
         for subschema in all_of_schema:
-            for error in self.flattened_errors(self._errors(data, subschema)):
-                if not error_found:
-                    error_found = True
-                    yield ValidationError('Error validating "%s" with allOf schema "%s".'
-                        % (data, all_of_schema))
-                yield error
+            subschema_errors = self.errors(data, subschema)
+            if subschema_errors.lookahead():
+                invalid_schemas.append(subschema)
+                errors.append(subschema_errors)
+        if len(errors):
+            yield ValidationError(ValidationError.Type.ALL_OF, invalid_schemas, data, errors=errors)
 
     def _any_of(self, data, schema):
-        """ Yield an error if all schemas fail. """
         any_of_schema = schema.get('anyOf')
-        # 'anyOf' in schema == True
         error_count = 0
         for subschema in any_of_schema:
-            if next(self.flattened_errors(self._errors(data, subschema)), self._flag) != self._flag:
+            subschema_errors = self.errors(data, subschema)
+            if subschema_errors.lookahead():
                 error_count += 1
         if error_count == len(any_of_schema):
-            yield ValidationError('Error validating "%s" with anyOf schema "%s".'
-                % (data, any_of_schema))
+            yield ValidationError(ValidationError.Type.ANY_OF, any_of_schema, data)
 
     def _one_of(self, data, schema):
-        """ Yield an error if more than one or zero schemas validate. """
         one_of_schema = schema.get('oneOf')
-        # 'oneOf' in schmea == True
         validate_count = 0
+        validated_subschemas = []
         for subschema in one_of_schema:
-            if next(self.flattened_errors(self._errors(data, subschema)), self._flag) == self._flag:
+            subschema_errors = self.errors(data, subschema)
+            if not subschema_errors.lookahead():
                 validate_count += 1
+                validated_subschemas.append(subschema)
         if validate_count != 1:
-            yield ValidationError('Error validating "%s" with oneOf schema "%s".'
-                % (data, one_of_schema))
+            yield ValidationError(ValidationError.Type.ONE_OF, schema, data, validated=validated_subschemas)
 
     def _required(self, data, schema):
         for key in schema.get('required', {}):
             if key not in data:
-                yield ValidationError('Error validating "%s." Required property "%s" missing.'
-                    % (data, key))
+                yield ValidationError(ValidationError.Type.REQUIRED, key, data)
 
     def _pattern(self, data, schema):
         regex = schema.get('pattern')
-        # 'pattern' in schema == True
-        r = re.compile(regex)
+
+        try:
+            r = self._regex_cache(regex)
+        except:
+            r = re.compile(regex)
+            self._regex_cache[regex] = r
+
         if not r.search(data):
-            yield ValidationError('Error validating "%s." Does not match pattern "%s".'
-                % (data, regex))
+            yield ValidationError(ValidationError.Type.PATTERN, regex, data)
 
     def _properties(self, data, schema):
         properties = schema.get('properties', {})
@@ -282,83 +272,84 @@ class Draft4Validator(object):
         additional = schema.get('additionalProperties', True)
         for key in data:
             if key in properties:
-                yield self.flattened_errors(self._errors(data[key], properties[key]))
-            subschemas = self._regex_dict(key, patterns)
+                yield self.errors(data[key], properties[key])
+            subschemas = self._regex_keys(key, patterns)
             if len(subschemas) > 0:
                 for subschema in subschemas:
-                    yield self.flattened_errors(self._errors(data[key], subschema))
+                    yield self.errors(data[key], subschema)
             elif key not in properties:
                 if type(additional) == bool:
                     if not additional:
-                        yield ValidationError('Error validating "%s". Key %s not allowed.'
-                            % (data, key))
+                        yield ValidationError(ValidationError.Type.ADDITIONAL_PROPERTIES, False, key)
                 else:
-                    yield self.flattened_errors(self._errors(data[key], additional))
+                    yield self.errors(data[key], additional)
 
-    def _regex_dict(self, key, regex_dict):
+    def _regex_keys(self, key, regex_dict):
         matches = []
         for regex in regex_dict:
-            r = re.compile(regex)
+            try:
+                r = self._regex_cache[regex]
+            except:
+                r = re.compile(regex)
+                self._regex_cache[regex] = r
+
             if r.search(key):
                 matches.append(regex_dict[regex])
         return matches
 
     def _max_properties(self, data, schema):
         maxProperties = schema.get('maxProperties', None)
-        if maxProperties != None and len(data.keys()) > maxProperties:
-            yield ValidationError('Error validating "%s." Number of keys greater than "%s."'
-                % (data, schema))
+        len_data = len(data)
+        if maxProperties != None and len_data > maxProperties:
+            yield ValidationError(ValidationError.Type.MAX_PROPERTIES, maxProperties, len_data)
 
     def _min_properties(self, data, schema):
         minProperties = schema.get('minProperties', None)
-        if minProperties != None and len(data.keys()) < minProperties:
-            yield ValidationError('Error validating "%s." Number of keys less than "%s."'
-                % (data, schema))
+        len_data = len(data)
+        if minProperties != None and len_data < minProperties:
+            yield ValidationError(ValidationError.Type.MIN_PROPERTIES, minProperties, len_data)
 
     def _dependencies(self, data, schema):
+        # TODO: ensure the logic in this function is solid.
+        # Write more detailed tests to ensure code handles corner cases.
         for key, value in schema.get('dependencies', {}).items():
             if key in data:
                 if type(value) == list:
                     for dependency in value:
                         if dependency not in data:
-                            yield ValidationError('Error validating "%s." Missing dependency "%s"'
-                                ' of "%s" ' % (data, dependency, key))
-                else: # type(value) == dict:
-                    gen = self.flattened_errors(self._properties(data, value))
-                    err = next(gen, self._flag)
-                    if err != self._flag:
-                        yield ValidationError('Error validating "%s." Incorrect dependencies.'
-                            % data)
-                        yield err
-                        yield gen
-
-    def flattened_errors(self, it):
-        for i in it:
-            if (isinstance(i, Iterable) and
-                not isinstance(i, str)):
-                for y in self.flattened_errors(i):
-                    yield y
-            else:
-                yield i
+                            # TODO: This makes no sense! What about dependencies that don't validate?!
+                            yield ValidationError(ValidationError.Type.DEPENDENCIES, dependency, data)
+                        else:
+                            yield self.errors(data, dependency)
+                else:
+                    errors = ParserIterator(self._properties(data, value))
+                    error = errors.lookahead()
+                    if error:
+                        # TODO: I disagree with this now. It's not that the dependency is missing, but
+                        # that the schema of the dependency didn't validate. So just yield the subschema's
+                        # errors and remove this dependency error.
+                        yield ValidationError(ValidationError.Type.DEPENDENCIES, error.schema, error.data, errors=errors)
 
     def validate(self, data):
-        """Validate data against _schema.
+        """Validate data against schema.
         :param data: The data to validate.
         :return: None
-        :raises: ValidationError if data does
-        not conform to _schema.
-        """
+        :raises: ValidationError if data does not conform to _schema."""
         self._validate(data, self._schema)
 
     def _validate_schema(self, schema):
         self._validate(schema, metaschema)
     
     def _validate(self, data, schema):
-        error = next(self.errors(data, schema=schema), self._flag)
-        if error != self._flag:
+        errors = self.errors(data, schema)
+        error = errors.lookahead()
+        if error:
             raise error
 
     def is_valid(self, data):
+        """Validate data against schema.
+        :param data: The data to validate.
+        :return: boolean True if valid, False otherwise."""
         try:
             self.validate(data)
             return True
@@ -366,6 +357,8 @@ class Draft4Validator(object):
             return False
 
     def is_schema_valid(self):
+        """Validate schema against metaschema.
+        :return boolean True if valid, False otherwise."""
         try:
             self._validate_schema(self._schema)
             return True

@@ -28,6 +28,21 @@
                 "valid": true
             },
             {
+                "description": "a valid type",
+                "data": {"type": ["object", "unknown"]},
+                "valid": false
+            },
+            {
+                "description": "a invalid type",
+                "data": {"type": "unknown"},
+                "valid": false
+            },
+            {
+                "description": "a valid schema",
+                "data": {"type": {"data": "bad"}},
+                "valid": false
+            },
+            {
                 "description": "a valid schema",
                 "data": {
                     "title": "Supervisor Command",
