@@ -3,4 +3,3 @@ codecov
 rfc3986
 rfc3987
 strict-rfc3339
-enum34
